@@ -1,12 +1,20 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.db.models import Q
+
+from .phone import normalize_chile_phone_number
 
 
 class User(AbstractUser):
     email = models.EmailField(unique=True)
+    phone_number = models.CharField(max_length=11, blank=True, default="")
     is_customer = models.BooleanField(default=True)
 
     REQUIRED_FIELDS = ["email"]
+
+    def save(self, *args, **kwargs):
+        self.phone_number = normalize_chile_phone_number(self.phone_number)
+        super().save(*args, **kwargs)
 
     def __str__(self) -> str:
         return self.username
@@ -52,3 +60,12 @@ class Direccion(models.Model):
     is_default = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user"],
+                condition=Q(is_default=True),
+                name="uniq_default_direccion_per_user",
+            )
+        ]

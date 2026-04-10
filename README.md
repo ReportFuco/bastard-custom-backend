@@ -92,6 +92,7 @@ Endpoints relevantes de catálogo/carrito:
 - `GET /api/products/{slug}/`
 - `GET /api/products/categorias/`
 - `GET /api/cart/`
+- `GET /api/cart/history/`
 - `POST /api/cart/items/`
 - `PATCH /api/cart/items/{item_id}/`
 - `DELETE /api/cart/items/{item_id}/`
@@ -101,6 +102,9 @@ Endpoints relevantes de órdenes/checkout:
 - `GET /api/orders/`
 - `GET /api/orders/{id}/`
 - `POST /api/orders/checkout/`
+
+Endpoints de inventario (solo admin):
+- `GET /api/inventory/items/`
 
 Más detalle en:
 - `docs/API.md`

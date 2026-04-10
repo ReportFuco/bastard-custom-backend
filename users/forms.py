@@ -1,6 +1,35 @@
 from django import forms
+from django.contrib.auth.forms import UserChangeForm, UserCreationForm
+from django.core.exceptions import ValidationError
 
-from .models import Comuna, Direccion, Region
+from .models import Comuna, Direccion, Region, User
+from .phone import normalize_chile_phone_number
+
+
+class UserAdminCreationForm(UserCreationForm):
+    class Meta(UserCreationForm.Meta):
+        model = User
+        fields = ("username", "email", "phone_number")
+
+    def clean_phone_number(self):
+        value = self.cleaned_data.get("phone_number", "")
+        try:
+            return normalize_chile_phone_number(value)
+        except ValidationError as exc:
+            raise forms.ValidationError(exc.message) from exc
+
+
+class UserAdminChangeForm(UserChangeForm):
+    class Meta:
+        model = User
+        fields = "__all__"
+
+    def clean_phone_number(self):
+        value = self.cleaned_data.get("phone_number", "")
+        try:
+            return normalize_chile_phone_number(value)
+        except ValidationError as exc:
+            raise forms.ValidationError(exc.message) from exc
 
 
 class DireccionAdminForm(forms.ModelForm):

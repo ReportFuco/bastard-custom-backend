@@ -33,7 +33,7 @@ class CarritoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Carrito
-        fields = ["id", "created_at", "updated_at", "total_items", "total", "items"]
+        fields = ["id", "status", "checked_out_at", "created_at", "updated_at", "total_items", "total", "items"]
 
     def get_total_items(self, obj):
         return sum(item.cantidad for item in obj.items.all())

@@ -1,5 +1,3 @@
-from decimal import Decimal
-
 from rest_framework import serializers
 
 from users.models import Direccion
@@ -44,7 +42,6 @@ class OrderSerializer(serializers.ModelSerializer):
 
 class CheckoutSerializer(serializers.Serializer):
     direccion_id = serializers.PrimaryKeyRelatedField(queryset=Direccion.objects.all(), source="direccion")
-    shipping_cost = serializers.DecimalField(max_digits=10, decimal_places=2, required=False, default=Decimal("0.00"))
     notes = serializers.CharField(required=False, allow_blank=True, default="")
 
     def __init__(self, *args, **kwargs):

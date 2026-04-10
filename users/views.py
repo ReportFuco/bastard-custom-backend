@@ -1,7 +1,9 @@
 from django.contrib.auth import get_user_model
 from rest_framework import generics, permissions, viewsets
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from .models import Region, Comuna, Direccion
 from .serializers import (
@@ -17,6 +19,14 @@ User = get_user_model()
 
 class RegisterView(generics.CreateAPIView):
     serializer_class = UserRegisterSerializer
+    permission_classes = [permissions.AllowAny]
+
+
+class PublicTokenObtainPairView(TokenObtainPairView):
+    permission_classes = [permissions.AllowAny]
+
+
+class PublicTokenRefreshView(TokenRefreshView):
     permission_classes = [permissions.AllowAny]
 
 
@@ -65,5 +75,7 @@ class ComunaListView(generics.ListAPIView):
         queryset = Comuna.objects.select_related("region").order_by("nombre")
         region_id = self.request.query_params.get("region_id")
         if region_id:
+            if not region_id.isdigit():
+                raise ValidationError({"region_id": "region_id debe ser numerico."})
             queryset = queryset.filter(region_id=region_id)
         return queryset

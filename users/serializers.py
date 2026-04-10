@@ -1,7 +1,9 @@
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 
 from .models import Region, Comuna, Direccion
+from .phone import normalize_chile_phone_number
 
 User = get_user_model()
 
@@ -12,7 +14,16 @@ class UserRegisterSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ["id", "username", "email", "first_name", "last_name", "password", "password_confirm"]
+        fields = [
+            "id",
+            "username",
+            "email",
+            "first_name",
+            "last_name",
+            "phone_number",
+            "password",
+            "password_confirm",
+        ]
 
     def validate(self, attrs):
         if attrs["password"] != attrs["password_confirm"]:
@@ -23,6 +34,12 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         if User.objects.filter(email__iexact=value).exists():
             raise serializers.ValidationError("Ya existe un usuario con este email.")
         return value.lower()
+
+    def validate_phone_number(self, value):
+        try:
+            return normalize_chile_phone_number(value)
+        except DjangoValidationError as exc:
+            raise serializers.ValidationError(exc.message) from exc
 
     def create(self, validated_data):
         validated_data.pop("password_confirm")
@@ -37,8 +54,14 @@ class UserRegisterSerializer(serializers.ModelSerializer):
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ["id", "username", "email", "first_name", "last_name", "is_customer"]
+        fields = ["id", "username", "email", "first_name", "last_name", "phone_number", "is_customer"]
         read_only_fields = ["id", "email", "is_customer"]
+
+    def validate_phone_number(self, value):
+        try:
+            return normalize_chile_phone_number(value)
+        except DjangoValidationError as exc:
+            raise serializers.ValidationError(exc.message) from exc
 
 
 class RegionSerializer(serializers.ModelSerializer):

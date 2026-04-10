@@ -3,7 +3,7 @@ from django.contrib.auth.admin import UserAdmin
 from django.http import JsonResponse
 from django.urls import path, reverse
 
-from .forms import DireccionAdminForm
+from .forms import DireccionAdminForm, UserAdminCreationForm, UserAdminChangeForm
 from .models import (
     Comuna, User, Direccion, Region
 )
@@ -12,9 +12,14 @@ from .models import (
 @admin.register(User)
 class CustomUserAdmin(UserAdmin):
     model = User
-    list_display = ("username", "email", "is_customer", "is_staff")
+    form = UserAdminChangeForm
+    add_form = UserAdminCreationForm
+    list_display = ("username", "email", "phone_number", "is_customer", "is_staff")
     fieldsets = UserAdmin.fieldsets + (
-        ("Extra info", {"fields": ("is_customer",)}),
+        ("Extra info", {"fields": ("phone_number", "is_customer")}),
+    )
+    add_fieldsets = UserAdmin.add_fieldsets + (
+        ("Extra info", {"fields": ("email", "phone_number", "is_customer")}),
     )
 
 

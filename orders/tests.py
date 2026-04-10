@@ -1,3 +1,92 @@
-from django.test import TestCase
+from django.contrib.auth import get_user_model
+from django.urls import reverse
+from rest_framework import status
+from rest_framework.test import APITestCase
 
-# Create your tests here.
+from cart.models import Carrito, ItemCarrito
+from inventory.models import InventoryItem
+from products.models import Categorias, Producto
+from users.models import Comuna, Direccion, Region
+
+from .models import Order
+
+User = get_user_model()
+
+
+class CheckoutFlowTests(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="cliente",
+            email="cliente@test.com",
+            password="12345678",
+        )
+        self.client.force_authenticate(user=self.user)
+
+        self.region = Region.objects.create(nombre="Metropolitana")
+        self.comuna = Comuna.objects.create(nombre="Santiago", region=self.region)
+        self.direccion = Direccion.objects.create(
+            user=self.user,
+            label="Casa",
+            direccion="Av Siempre Viva 123",
+            comuna=self.comuna,
+            is_default=True,
+        )
+
+        self.categoria = Categorias.objects.create(nombre="Ropa", slug="ropa")
+        self.producto = Producto.objects.create(
+            nombre="Polera",
+            categoria=self.categoria,
+            slug="polera",
+            precio="19990.00",
+            activo=True,
+        )
+        InventoryItem.objects.create(product=self.producto, available_quantity=10)
+
+        carrito = Carrito.objects.create(user=self.user)
+        ItemCarrito.objects.create(carrito=carrito, producto=self.producto, cantidad=2)
+
+    def test_checkout_calculates_shipping_server_side(self):
+        url = reverse("orders-checkout")
+        response = self.client.post(
+            url,
+            {"direccion_id": self.direccion.id, "notes": "Entregar rapido"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data["subtotal"], "39980.00")
+        self.assertEqual(response.data["shipping_cost"], "2990.00")
+        self.assertEqual(response.data["total"], "42970.00")
+
+    def test_checkout_is_idempotent_with_header(self):
+        url = reverse("orders-checkout")
+        headers = {"HTTP_IDEMPOTENCY_KEY": "idem-123"}
+
+        first = self.client.post(
+            url,
+            {"direccion_id": self.direccion.id},
+            format="json",
+            **headers,
+        )
+        second = self.client.post(
+            url,
+            {"direccion_id": self.direccion.id},
+            format="json",
+            **headers,
+        )
+
+        self.assertEqual(first.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(second.status_code, status.HTTP_200_OK)
+        self.assertEqual(first.data["id"], second.data["id"])
+        self.assertEqual(Order.objects.count(), 1)
+
+    def test_checkout_fails_on_insufficient_stock(self):
+        inventory_item = InventoryItem.objects.get(product=self.producto)
+        inventory_item.available_quantity = 1
+        inventory_item.save(update_fields=["available_quantity"])
+
+        url = reverse("orders-checkout")
+        response = self.client.post(url, {"direccion_id": self.direccion.id}, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data["detail"], "Stock insuficiente para completar la compra.")

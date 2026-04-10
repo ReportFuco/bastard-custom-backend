@@ -1,5 +1,8 @@
+from decimal import Decimal, InvalidOperation
+
 from django.db.models import Q
-from rest_framework import generics
+from rest_framework import generics, permissions
+from rest_framework.exceptions import ValidationError
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from .models import Producto, Categorias
@@ -12,6 +15,7 @@ from .serializers import (
 
 class CategoriaListView(generics.ListAPIView):
     serializer_class = CategoriaSerializer
+    permission_classes = [permissions.AllowAny]
 
     def get_queryset(self):
         queryset = Categorias.objects.filter(activo=True).order_by("nombre")
@@ -24,6 +28,7 @@ class CategoriaListView(generics.ListAPIView):
 class ProductoViewSet(ReadOnlyModelViewSet):
     lookup_field = "slug"
     serializer_class = ProductoSerializer
+    permission_classes = [permissions.AllowAny]
 
     def get_queryset(self):
         queryset = (
@@ -50,10 +55,25 @@ class ProductoViewSet(ReadOnlyModelViewSet):
             queryset = queryset.filter(categoria__slug=categoria_slug)
 
         if precio_min:
-            queryset = queryset.filter(precio__gte=precio_min)
+            try:
+                precio_min_dec = Decimal(precio_min)
+                queryset = queryset.filter(precio__gte=precio_min_dec)
+            except (InvalidOperation, ValueError):
+                raise ValidationError({"precio_min": "precio_min debe ser numerico."})
+        else:
+            precio_min_dec = None
 
         if precio_max:
-            queryset = queryset.filter(precio__lte=precio_max)
+            try:
+                precio_max_dec = Decimal(precio_max)
+                queryset = queryset.filter(precio__lte=precio_max_dec)
+            except (InvalidOperation, ValueError):
+                raise ValidationError({"precio_max": "precio_max debe ser numerico."})
+        else:
+            precio_max_dec = None
+
+        if precio_min_dec is not None and precio_max_dec is not None and precio_min_dec > precio_max_dec:
+            raise ValidationError({"detail": "precio_min no puede ser mayor que precio_max."})
 
         return queryset
 

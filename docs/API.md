@@ -151,6 +151,11 @@ Todos los endpoints de carrito requieren usuario autenticado.
 
 ### Ver carrito actual
 - `GET /api/cart/`
+- siempre devuelve el carrito activo del usuario (se crea si no existe)
+
+### Historial de carritos
+- `GET /api/cart/history/`
+- devuelve carritos del usuario (activo y cerrados)
 
 Respuesta ejemplo:
 ```json
@@ -223,17 +228,18 @@ Body ejemplo:
 ```json
 {
   "direccion_id": 1,
-  "shipping_cost": "2990.00",
   "notes": "Entregar en conserjería"
 }
 ```
 
 Qué hace:
-- toma el carrito actual del usuario
+- toma el carrito activo del usuario
+- valida y descuenta stock en inventario
+- calcula costo de envío en backend
 - genera una orden
 - guarda snapshot de dirección
 - guarda snapshot de productos y precios
-- vacía el carrito
+- marca ese carrito como `checked_out` y crea un nuevo carrito `active`
 
 ## Estado actual / pendientes
 
