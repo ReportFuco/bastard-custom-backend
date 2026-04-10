@@ -16,7 +16,8 @@ class CustomUserAdmin(UserAdmin):
 
 @admin.register(Direccion)
 class DireccionAdmin(admin.ModelAdmin):
-    list_display = ("user", "label", "direccion", "comuna", "created_at")
+    list_display = ("user", "label", "direccion", "comuna", "is_default", "created_at")
+    list_filter = ("is_default", "comuna__region")
 
 
 @admin.register(Comuna)
