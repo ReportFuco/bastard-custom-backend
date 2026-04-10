@@ -23,7 +23,7 @@ class Carrito(models.Model):
         constraints = [
             models.UniqueConstraint(
                 fields=["user"],
-                condition=Q(status=Status.ACTIVE),
+                condition=Q(status="active"),
                 name="uniq_active_cart_per_user",
             ),
         ]
