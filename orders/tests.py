@@ -58,6 +58,15 @@ class CheckoutFlowTests(APITestCase):
         self.assertEqual(response.data["shipping_cost"], "2990.00")
         self.assertEqual(response.data["total"], "42970.00")
 
+    def test_checkout_is_free_shipping_when_threshold_is_reached(self):
+        self.producto.precio = "50000.00"
+        self.producto.save(update_fields=["precio"])
+        url = reverse("orders-checkout")
+        response = self.client.post(url, {"direccion_id": self.direccion.id}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data["shipping_cost"], "0.00")
+        self.assertEqual(response.data["total"], response.data["subtotal"])
+
     def test_checkout_is_idempotent_with_header(self):
         url = reverse("orders-checkout")
         headers = {"HTTP_IDEMPOTENCY_KEY": "idem-123"}
@@ -90,3 +99,22 @@ class CheckoutFlowTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data["detail"], "Stock insuficiente para completar la compra.")
+
+    def test_checkout_fails_if_product_is_inactive(self):
+        self.producto.activo = False
+        self.producto.save(update_fields=["activo"])
+        url = reverse("orders-checkout")
+        response = self.client.post(url, {"direccion_id": self.direccion.id}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data["detail"], "Hay productos inactivos en el carrito.")
+
+    def test_checkout_creates_new_active_cart_and_closes_old_one(self):
+        previous_cart = Carrito.objects.get(user=self.user, status=Carrito.Status.ACTIVE)
+        url = reverse("orders-checkout")
+        response = self.client.post(url, {"direccion_id": self.direccion.id}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        previous_cart.refresh_from_db()
+        self.assertEqual(previous_cart.status, Carrito.Status.CHECKED_OUT)
+        self.assertIsNotNone(previous_cart.checked_out_at)
+        self.assertEqual(Carrito.objects.filter(user=self.user, status=Carrito.Status.ACTIVE).count(), 1)

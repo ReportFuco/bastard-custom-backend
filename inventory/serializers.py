@@ -7,6 +7,8 @@ class InventoryItemSerializer(serializers.ModelSerializer):
     product_id = serializers.IntegerField(source="product.id", read_only=True)
     product_name = serializers.CharField(source="product.nombre", read_only=True)
     product_slug = serializers.CharField(source="product.slug", read_only=True)
+    total_quantity = serializers.IntegerField(read_only=True)
+    in_stock = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = InventoryItem
@@ -17,5 +19,7 @@ class InventoryItemSerializer(serializers.ModelSerializer):
             "product_slug",
             "available_quantity",
             "reserved_quantity",
+            "total_quantity",
+            "in_stock",
             "updated_at",
         ]

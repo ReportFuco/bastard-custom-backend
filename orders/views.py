@@ -83,12 +83,32 @@ class CheckoutView(APIView):
         cart_items = list(
             ItemCarrito.objects
             .select_for_update()
-            .select_related("producto")
+            .select_related("producto", "producto__categoria")
             .filter(carrito=carrito)
         )
 
         if not cart_items:
             return Response({"detail": "El carrito esta vacio."}, status=status.HTTP_400_BAD_REQUEST)
+
+        invalid_products = []
+        for item in cart_items:
+            if not item.producto.activo or not item.producto.categoria.activo:
+                invalid_products.append(
+                    {
+                        "product_id": item.producto_id,
+                        "nombre": item.producto.nombre,
+                        "reason": "inactive_product",
+                    }
+                )
+
+        if invalid_products:
+            return Response(
+                {
+                    "detail": "Hay productos inactivos en el carrito.",
+                    "items": invalid_products,
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         direccion = serializer.validated_data["direccion"]
         notes = serializer.validated_data.get("notes", "")
