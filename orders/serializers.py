@@ -47,8 +47,22 @@ class CheckoutSerializer(serializers.Serializer):
     shipping_cost = serializers.DecimalField(max_digits=10, decimal_places=2, required=False, default=Decimal("0.00"))
     notes = serializers.CharField(required=False, allow_blank=True, default="")
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        request = self.context.get("request")
+
+        if not request or not request.user.is_authenticated:
+            self.fields["direccion_id"].queryset = Direccion.objects.none()
+            return
+
+        if request.user.is_superuser:
+            self.fields["direccion_id"].queryset = Direccion.objects.all()
+            return
+
+        self.fields["direccion_id"].queryset = Direccion.objects.filter(user=request.user)
+
     def validate_direccion(self, value):
         request = self.context["request"]
-        if value.user_id != request.user.id:
-            raise serializers.ValidationError("La dirección no pertenece al usuario autenticado.")
+        if not request.user.is_superuser and value.user_id != request.user.id:
+            raise serializers.ValidationError("La direccion no pertenece al usuario autenticado.")
         return value

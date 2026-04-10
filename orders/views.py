@@ -15,11 +15,13 @@ class OrderListView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return (
+        queryset = (
             Order.objects
-            .filter(user=self.request.user)
             .prefetch_related("items")
         )
+        if self.request.user.is_superuser:
+            return queryset
+        return queryset.filter(user=self.request.user)
 
 
 class OrderDetailView(generics.RetrieveAPIView):
@@ -27,11 +29,13 @@ class OrderDetailView(generics.RetrieveAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return (
+        queryset = (
             Order.objects
-            .filter(user=self.request.user)
             .prefetch_related("items")
         )
+        if self.request.user.is_superuser:
+            return queryset
+        return queryset.filter(user=self.request.user)
 
 
 class CheckoutView(APIView):

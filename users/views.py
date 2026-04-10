@@ -39,12 +39,16 @@ class DireccionViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return (
+        queryset = (
             Direccion.objects
-            .filter(user=self.request.user)
-            .select_related("comuna", "comuna__region")
+            .select_related("comuna", "comuna__region", "user")
             .order_by("-is_default", "label")
         )
+
+        if self.request.user.is_superuser:
+            return queryset
+
+        return queryset.filter(user=self.request.user)
 
 
 class RegionListView(generics.ListAPIView):
