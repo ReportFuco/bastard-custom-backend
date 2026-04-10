@@ -206,6 +206,35 @@ Body:
 
 ---
 
+## Órdenes / Checkout
+
+Todos los endpoints de órdenes requieren usuario autenticado.
+
+### Listado de órdenes
+- `GET /api/orders/`
+
+### Detalle de orden
+- `GET /api/orders/{id}/`
+
+### Checkout desde carrito
+- `POST /api/orders/checkout/`
+
+Body ejemplo:
+```json
+{
+  "direccion_id": 1,
+  "shipping_cost": "2990.00",
+  "notes": "Entregar en conserjería"
+}
+```
+
+Qué hace:
+- toma el carrito actual del usuario
+- genera una orden
+- guarda snapshot de dirección
+- guarda snapshot de productos y precios
+- vacía el carrito
+
 ## Estado actual / pendientes
 
 Implementado:
@@ -215,12 +244,14 @@ Implementado:
 - catálogo de productos
 - categorías
 - carrito funcional
+- órdenes base
+- checkout base desde carrito
 
 Pendiente:
-- órdenes
 - inventario real
-- checkout
+- validación de stock
 - pagos
+- estados avanzados de fulfillment
 - documentación más formal tipo OpenAPI/Swagger
 
 ---

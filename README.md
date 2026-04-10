@@ -97,6 +97,11 @@ Endpoints relevantes de catálogo/carrito:
 - `DELETE /api/cart/items/{item_id}/`
 - `DELETE /api/cart/clear/`
 
+Endpoints relevantes de órdenes/checkout:
+- `GET /api/orders/`
+- `GET /api/orders/{id}/`
+- `POST /api/orders/checkout/`
+
 Más detalle en:
 - `docs/API.md`
 
