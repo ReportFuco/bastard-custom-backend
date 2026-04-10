@@ -80,12 +80,26 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "config.wsgi.application"
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / get_env("SQLITE_NAME", "db.sqlite3"),
+DB_ENGINE = get_env("DB_ENGINE", "sqlite").lower()
+
+if DB_ENGINE == "postgres":
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": get_env("POSTGRES_DB", "tienda_online"),
+            "USER": get_env("POSTGRES_USER", "tienda_online"),
+            "PASSWORD": get_env("POSTGRES_PASSWORD", "tienda_online"),
+            "HOST": get_env("POSTGRES_HOST", "db"),
+            "PORT": get_env("POSTGRES_PORT", "5432"),
+        }
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / get_env("SQLITE_NAME", "db.sqlite3"),
+        }
+    }
 
 AUTH_PASSWORD_VALIDATORS = [
     {
