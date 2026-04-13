@@ -1,0 +1,304 @@
+html[data-theme="light"],
+html[data-theme="auto"],
+:root {
+  --primary: #0f4c5c;
+  --secondary: #146c78;
+  --accent: #d9a441;
+  --link-fg: #0f4c5c;
+  --link-selected-fg: #146c78;
+  --header-bg: linear-gradient(120deg, #0f4c5c 0%, #146c78 100%);
+  --header-color: #f4fbfd;
+  --body-bg: #f4f7f9;
+  --body-fg: #17313a;
+  --hairline-color: #dbe5ea;
+  --border-color: #dbe5ea;
+  --darkened-bg: #e9f0f4;
+  --selected-bg: #d8eaf1;
+  --selected-row: #e8f4f8;
+  --button-bg: #0f4c5c;
+  --button-hover-bg: #0b3d4a;
+  --default-button-bg: #d9a441;
+  --default-button-hover-bg: #be8f37;
+  --close-button-bg: #8d2d2d;
+  --close-button-hover-bg: #6f2121;
+}
+
+html[data-theme="dark"] {
+  --primary: #5fb8ce;
+  --secondary: #49a6bd;
+  --accent: #f2c66b;
+  --link-fg: #8fd2e4;
+  --link-selected-fg: #b8e8f4;
+  --header-bg: linear-gradient(120deg, #123643 0%, #0e2a34 100%);
+  --header-color: #e6f5fa;
+  --body-bg: #0f1419;
+  --body-fg: #d7e4ea;
+  --hairline-color: #2a3942;
+  --border-color: #2a3942;
+  --darkened-bg: #142029;
+  --selected-bg: #1b2d38;
+  --selected-row: #1a2b35;
+  --button-bg: #2e7d92;
+  --button-hover-bg: #256678;
+  --default-button-bg: #c6963a;
+  --default-button-hover-bg: #a97f2f;
+  --close-button-bg: #9f3c3c;
+  --close-button-hover-bg: #7e2f2f;
+}
+
+body {
+  font-family: "Segoe UI Variable Text", "Segoe UI", "Noto Sans", sans-serif;
+  background: radial-gradient(circle at top right, #f9fcff 0, #f4f7f9 45%, #eef3f6 100%);
+}
+
+html[data-theme="dark"] body {
+  background: radial-gradient(circle at top right, #172029 0, #0f1419 55%, #0d1116 100%);
+}
+
+html[data-theme="auto"] body {
+  background: radial-gradient(circle at top right, #f9fcff 0, #f4f7f9 45%, #eef3f6 100%);
+}
+
+#header {
+  box-shadow: 0 10px 26px rgba(15, 76, 92, 0.22);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.brand-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+#site-name {
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
+#site-name a {
+  color: #f9feff;
+}
+
+.brand-subtitle {
+  margin: 0;
+  font-size: 12px;
+  color: rgba(241, 250, 252, 0.82);
+}
+
+#user-tools,
+#user-tools a,
+#user-tools a:visited {
+  color: #f3fbff;
+}
+
+#user-tools a:hover {
+  color: #ffffff;
+  text-decoration: underline;
+}
+
+div.breadcrumbs {
+  background: #f0f7fa;
+  border-bottom: 1px solid var(--hairline-color);
+  color: #2c4b56;
+}
+
+div.breadcrumbs a,
+div.breadcrumbs a:visited {
+  color: #2a5f73 !important;
+  font-weight: 600;
+}
+
+html[data-theme="dark"] div.breadcrumbs {
+  background: #16232c;
+  color: #d1e2e9;
+}
+
+html[data-theme="dark"] div.breadcrumbs a,
+html[data-theme="dark"] div.breadcrumbs a:visited {
+  color: #9dd8ea !important;
+}
+
+#content {
+  padding: 24px 24px 28px;
+}
+
+#content-main,
+#changelist-filter {
+  border-radius: 14px;
+}
+
+.module,
+.inline-group,
+#changelist-filter {
+  border: 1px solid var(--hairline-color);
+  border-radius: 14px;
+  box-shadow: 0 10px 20px rgba(9, 38, 47, 0.06);
+  background: #fff;
+}
+
+html[data-theme="dark"] .module,
+html[data-theme="dark"] .inline-group,
+html[data-theme="dark"] #changelist-filter,
+html[data-theme="dark"] #login-form,
+html[data-theme="dark"] .submit-row {
+  background: #141c23;
+}
+
+.module h2,
+.module caption,
+.inline-group h2,
+.dashboard .module caption,
+.dashboard .module h2 {
+  background: linear-gradient(120deg, #f5fbfe 0%, #ebf5f8 100%);
+  border-bottom: 1px solid var(--hairline-color);
+  color: #123743 !important;
+  font-weight: 700;
+}
+
+.dashboard .module caption a,
+.dashboard .module h2 a {
+  color: #123743 !important;
+}
+
+html[data-theme="dark"] .module h2,
+html[data-theme="dark"] .module caption,
+html[data-theme="dark"] .inline-group h2,
+html[data-theme="dark"] .dashboard .module caption,
+html[data-theme="dark"] .dashboard .module h2 {
+  background: linear-gradient(120deg, #1a2a34 0%, #16242d 100%);
+  border-bottom: 1px solid #2a3942;
+  color: #e4f0f4 !important;
+}
+
+html[data-theme="dark"] .dashboard .module caption a,
+html[data-theme="dark"] .dashboard .module h2 a {
+  color: #e4f0f4 !important;
+}
+
+div.help,
+p.help,
+.help {
+  color: #4a6670;
+}
+
+html[data-theme="dark"] div.help,
+html[data-theme="dark"] p.help,
+html[data-theme="dark"] .help {
+  color: #a5bcc7;
+}
+
+.module a,
+.module a:visited,
+#content a,
+#content a:visited {
+  color: #0f5770;
+}
+
+html[data-theme="dark"] .module a,
+html[data-theme="dark"] .module a:visited,
+html[data-theme="dark"] #content a,
+html[data-theme="dark"] #content a:visited {
+  color: #88cce0;
+}
+
+#nav-sidebar .current-model {
+  background: #153949;
+}
+
+#nav-sidebar .current-model a,
+#nav-sidebar .current-model a:visited,
+#nav-sidebar .current-app .section,
+#nav-sidebar .current-app .section:visited {
+  color: #e7f3f8;
+}
+
+.button,
+input[type="submit"],
+input[type="button"],
+.submit-row input,
+a.button {
+  border-radius: 10px;
+  border: 0;
+  font-weight: 600;
+  letter-spacing: 0.1px;
+}
+
+.submit-row {
+  border-radius: 12px;
+  border: 1px solid var(--hairline-color);
+  background: #f5fafc;
+}
+
+.submit-row a.deletelink {
+  border-radius: 10px;
+}
+
+table {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+#changelist table thead th {
+  background: #edf5f8;
+  color: #143b47;
+  border-bottom: 1px solid var(--hairline-color);
+}
+
+html[data-theme="dark"] #changelist table thead th {
+  background: #1a2a34;
+  color: #dceaf0;
+}
+
+#changelist table tbody tr:nth-child(even) {
+  background: #fbfdff;
+}
+
+html[data-theme="dark"] #changelist table tbody tr:nth-child(even) {
+  background: #131b22;
+}
+
+#changelist table tbody tr:hover {
+  background: #edf8fc;
+}
+
+html[data-theme="dark"] #changelist table tbody tr:hover {
+  background: #1c2d37;
+}
+
+#changelist-filter h2 {
+  background: #eef7fb;
+  color: #123b47;
+}
+
+html[data-theme="dark"] #changelist-filter h2 {
+  background: #1a2a34;
+  color: #e2edf2;
+}
+
+#changelist-filter li.selected {
+  border-left: 3px solid var(--secondary);
+  padding-left: 7px;
+}
+
+.dashboard .module table td a,
+.dashboard .module table th a,
+#changelist .actions {
+  font-weight: 600;
+}
+
+#login-form {
+  background: #fff;
+  border: 1px solid var(--hairline-color);
+  border-radius: 16px;
+  box-shadow: 0 14px 34px rgba(13, 53, 64, 0.12);
+}
+
+#login-form .form-row input {
+  border-radius: 10px;
+}
+
+@media (max-width: 900px) {
+  #content {
+    padding: 16px;
+  }
+}

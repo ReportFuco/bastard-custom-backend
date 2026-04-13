@@ -1,0 +1,19 @@
+{% extends "admin/base.html" %}
+{% load static %}
+
+{% block extrastyle %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'admin_custom/css/admin-modern.css' %}">
+{% endblock %}
+
+{% block extrahead %}
+{{ block.super }}
+<meta name="theme-color" content="#0f4c5c">
+{% endblock %}
+
+{% block branding %}
+<div class="brand-shell">
+  <h1 id="site-name"><a href="{% url 'admin:index' %}">Panel de Gestion</a></h1>
+  <p class="brand-subtitle">Tienda Virtual</p>
+</div>
+{% endblock %}
