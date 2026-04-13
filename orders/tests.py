@@ -131,3 +131,37 @@ class CheckoutFlowTests(APITestCase):
         self.assertEqual(movimiento.cantidad, 2)
         self.assertEqual(movimiento.cantidad_anterior, 10)
         self.assertEqual(movimiento.cantidad_posterior, 8)
+
+    def test_checkout_uses_default_address_if_direccion_id_is_missing(self):
+        url = reverse("orders-checkout")
+        response = self.client.post(url, {"notes": "sin direccion explicita"}, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data["direccion_etiqueta"], "Casa")
+        self.assertEqual(response.data["direccion_envio_id"], self.direccion.id)
+
+    def test_checkout_fails_if_user_has_no_addresses(self):
+        Direccion.objects.filter(usuario=self.user).delete()
+        url = reverse("orders-checkout")
+        response = self.client.post(url, {"notes": "sin direccion"}, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("direccion_id", response.data)
+
+    def test_checkout_rejects_address_from_another_user(self):
+        otro_usuario = User.objects.create_user(
+            username="otro",
+            email="otro@test.com",
+            password="12345678",
+        )
+        direccion_ajena = Direccion.objects.create(
+            usuario=otro_usuario,
+            etiqueta="Ajena",
+            direccion="Calle 999",
+            comuna=self.comuna,
+            es_predeterminada=True,
+        )
+        url = reverse("orders-checkout")
+        response = self.client.post(url, {"direccion_id": direccion_ajena.id}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("direccion_id", response.data)

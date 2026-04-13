@@ -19,6 +19,7 @@ class OrderListView(generics.ListAPIView):
     def get_queryset(self):
         queryset = (
             Order.objects
+            .select_related("direccion_envio__comuna__region")
             .prefetch_related("items")
         )
         if self.request.user.is_superuser:
@@ -33,6 +34,7 @@ class OrderDetailView(generics.RetrieveAPIView):
     def get_queryset(self):
         queryset = (
             Order.objects
+            .select_related("direccion_envio__comuna__region")
             .prefetch_related("items")
         )
         if self.request.user.is_superuser:
@@ -156,10 +158,7 @@ class CheckoutView(APIView):
             shipping_cost=shipping_cost,
             total=total,
             notes=notes,
-            shipping_label=direccion.etiqueta,
-            shipping_address=direccion.direccion,
-            shipping_comuna=direccion.comuna.nombre,
-            shipping_region=direccion.comuna.region.nombre,
+            direccion_envio=direccion,
         )
 
         order_items = []
@@ -204,5 +203,5 @@ class CheckoutView(APIView):
         carrito.save(update_fields=["status", "checked_out_at", "updated_at"])
         Carrito.objects.get_or_create(user=request.user, status=Carrito.Status.ACTIVE)
 
-        order = Order.objects.prefetch_related("items").get(pk=order.pk)
+        order = Order.objects.select_related("direccion_envio__comuna__region").prefetch_related("items").get(pk=order.pk)
         return Response(OrderSerializer(order).data, status=status.HTTP_201_CREATED)

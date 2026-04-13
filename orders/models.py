@@ -23,11 +23,13 @@ class Order(models.Model):
     shipping_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     total = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     notes = models.TextField(blank=True, default="")
-
-    shipping_label = models.CharField(max_length=50)
-    shipping_address = models.CharField(max_length=255)
-    shipping_comuna = models.CharField(max_length=100)
-    shipping_region = models.CharField(max_length=100)
+    direccion_envio = models.ForeignKey(
+        "users.Direccion",
+        on_delete=models.PROTECT,
+        related_name="ordenes",
+        null=True,
+        blank=True,
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

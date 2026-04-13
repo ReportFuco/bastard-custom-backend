@@ -82,10 +82,10 @@ Body:
 Body ejemplo para crear dirección:
 ```json
 {
-  "etiqueta": "Casa",
+  "label": "Casa",
   "direccion": "Av. Siempre Viva 123",
   "comuna": 10,
-  "es_predeterminada": true
+  "is_default": true
 }
 ```
 
@@ -95,7 +95,6 @@ Body ejemplo para crear dirección:
 
 ### Listado de productos
 - `GET /api/products/`
-- Incluye `imagen_principal` para mostrar la foto principal en cards/listas.
 
 Filtros disponibles:
 - `q` (nombre, descripción o categoría)
@@ -169,6 +168,12 @@ Todos los endpoints de órdenes requieren usuario autenticado.
 
 ### Detalle de orden
 - `GET /api/orders/{id}/`
+- Incluye dirección referenciada desde `users.Direccion`:
+  - `direccion_envio_id`
+  - `direccion_etiqueta`
+  - `direccion`
+  - `comuna`
+  - `region`
 
 ### Checkout desde carrito
 - `POST /api/orders/checkout/`
@@ -180,6 +185,10 @@ Body ejemplo:
   "notes": "Entregar en conserjería"
 }
 ```
+
+`direccion_id` es opcional:
+- Si no se envía, se usa la dirección predeterminada del usuario.
+- Si el usuario no tiene direcciones, el checkout responde error y debe crear una en `/api/users/direcciones/`.
 
 Header opcional (idempotencia):
 - `Idempotency-Key: <clave-unica>` (máximo 64 caracteres)
@@ -241,22 +250,6 @@ Campos relevantes de respuesta:
 - `creado_por_id`
 - `creado_por_username`
 - `creado_en`
-
----
-
-## Promociones (público)
-
-### Franjas promocionales activas
-- `GET /api/promotions/bands/`
-
-Comportamiento:
-- Devuelve solo franjas con `activa=true`.
-- Respeta rango de vigencia (`fecha_inicio` / `fecha_fin`).
-- Ordena por `prioridad` descendente y luego por actualización.
-
-Campos relevantes:
-- En español: `titulo`, `mensaje`, `etiqueta_cta`, `url_cta`, `color_fondo`, `color_texto`.
-- Compatibles con front actual: `title`, `message`, `ctaLabel`, `ctaUrl`, `backgroundColor`, `textColor`.
 
 ---
 

@@ -83,9 +83,7 @@ class TablaNutricionalSerializer(serializers.ModelSerializer):
             "carbohidratos_g",
             "azucares_g",
             "fibra_g",
-            "sodio_mg",
-            "creado_en",
-            "actualizado_en",
+            "sodio_mg"
         ]
 
 
