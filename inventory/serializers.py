@@ -1,25 +1,51 @@
 from rest_framework import serializers
 
-from .models import InventoryItem
+from .models import InventoryItem, MovimientoInventario
 
 
 class InventoryItemSerializer(serializers.ModelSerializer):
-    product_id = serializers.IntegerField(source="product.id", read_only=True)
-    product_name = serializers.CharField(source="product.nombre", read_only=True)
-    product_slug = serializers.CharField(source="product.slug", read_only=True)
-    total_quantity = serializers.IntegerField(read_only=True)
-    in_stock = serializers.BooleanField(read_only=True)
+    producto_id = serializers.IntegerField(source="producto.id", read_only=True)
+    producto_nombre = serializers.CharField(source="producto.nombre", read_only=True)
+    producto_slug = serializers.CharField(source="producto.slug", read_only=True)
+    cantidad_total = serializers.IntegerField(read_only=True)
+    en_stock = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = InventoryItem
         fields = [
             "id",
-            "product_id",
-            "product_name",
-            "product_slug",
-            "available_quantity",
-            "reserved_quantity",
-            "total_quantity",
-            "in_stock",
-            "updated_at",
+            "producto_id",
+            "producto_nombre",
+            "producto_slug",
+            "cantidad_disponible",
+            "cantidad_reservada",
+            "cantidad_total",
+            "en_stock",
+            "actualizado_en",
+        ]
+
+
+class MovimientoInventarioSerializer(serializers.ModelSerializer):
+    producto_id = serializers.IntegerField(source="item_inventario.producto.id", read_only=True)
+    producto_nombre = serializers.CharField(source="item_inventario.producto.nombre", read_only=True)
+    item_inventario_id = serializers.IntegerField(source="item_inventario.id", read_only=True)
+    creado_por_id = serializers.IntegerField(source="creado_por.id", read_only=True)
+    creado_por_username = serializers.CharField(source="creado_por.username", read_only=True)
+
+    class Meta:
+        model = MovimientoInventario
+        fields = [
+            "id",
+            "item_inventario_id",
+            "producto_id",
+            "producto_nombre",
+            "tipo",
+            "cantidad",
+            "cantidad_anterior",
+            "cantidad_posterior",
+            "motivo",
+            "referencia",
+            "creado_por_id",
+            "creado_por_username",
+            "creado_en",
         ]

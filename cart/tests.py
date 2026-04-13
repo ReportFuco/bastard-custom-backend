@@ -39,7 +39,7 @@ class CartHistoryTests(APITestCase):
             precio="10000.00",
             activo=True,
         )
-        InventoryItem.objects.create(product=self.producto, available_quantity=10)
+        InventoryItem.objects.create(producto=self.producto, cantidad_disponible=10)
 
     def test_checkout_closes_active_cart_and_creates_new_one(self):
         carrito = Carrito.objects.create(user=self.user, status=Carrito.Status.ACTIVE)

@@ -68,7 +68,7 @@ class ProductoViewSet(ReadOnlyModelViewSet):
         queryset = (
             Producto.objects
             .filter(activo=True, categoria__activo=True)
-            .select_related("categoria", "subcategoria", "marca", "precio_config")
+            .select_related("categoria", "subcategoria", "marca", "precio_config", "tabla_nutricional")
             .prefetch_related("imagenes", "variantes_color__color")
             .order_by("-created_at")
         )

@@ -9,6 +9,7 @@ from .models import (
     Marca,
     PrecioProducto,
     Subcategoria,
+    TablaNutricional,
     Color,
     Producto,
     ProductoImagen
@@ -26,6 +27,12 @@ class PrecioProductoInline(admin.StackedInline):
     max_num = 1
 
 
+class TablaNutricionalInline(admin.StackedInline):
+    model = TablaNutricional
+    extra = 0
+    max_num = 1
+
+
 @admin.register(Producto)
 class ProductoAdmin(admin.ModelAdmin):
     form = ProductoAdminForm
@@ -33,7 +40,7 @@ class ProductoAdmin(admin.ModelAdmin):
     prepopulated_fields = {"slug": ("nombre",)}
     list_filter = ("activo", "categoria", "subcategoria", "marca")
     search_fields = ("nombre", "marca__nombre")
-    inlines = [ProductoImagenInline, PrecioProductoInline]
+    inlines = [ProductoImagenInline, PrecioProductoInline, TablaNutricionalInline]
 
     def get_urls(self):
         urls = super().get_urls()
@@ -100,6 +107,12 @@ class MarcaAdmin(admin.ModelAdmin):
 class PrecioProductoAdmin(admin.ModelAdmin):
     list_display = ("producto", "precio_lista", "precio_oferta", "moneda", "activo", "updated_at")
     list_filter = ("activo", "moneda")
+    search_fields = ("producto__nombre", "producto__slug")
+
+
+@admin.register(TablaNutricional)
+class TablaNutricionalAdmin(admin.ModelAdmin):
+    list_display = ("producto", "porcion", "energia_kcal", "proteinas_g", "actualizado_en")
     search_fields = ("producto__nombre", "producto__slug")
 
 

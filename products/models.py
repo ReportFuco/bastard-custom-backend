@@ -111,6 +111,56 @@ class Producto(models.Model):
         return super().save(*args, **kwargs)
 
 
+class TablaNutricional(models.Model):
+    producto = models.OneToOneField(
+        Producto,
+        on_delete=models.CASCADE,
+        related_name="tabla_nutricional",
+    )
+    porcion = models.CharField(max_length=80, blank=True)
+    energia_kcal = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
+    proteinas_g = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
+    grasas_totales_g = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
+    grasas_saturadas_g = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
+    carbohidratos_g = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
+    azucares_g = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
+    fibra_g = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
+    sodio_mg = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
+    creado_en = models.DateTimeField(auto_now_add=True)
+    actualizado_en = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Tabla nutricional"
+        verbose_name_plural = "Tablas nutricionales"
+
+    def __str__(self) -> str:
+        return f"Tabla nutricional - {self.producto.nombre}"
+
+    def clean(self):
+        super().clean()
+        campos_no_negativos = [
+            "energia_kcal",
+            "proteinas_g",
+            "grasas_totales_g",
+            "grasas_saturadas_g",
+            "carbohidratos_g",
+            "azucares_g",
+            "fibra_g",
+            "sodio_mg",
+        ]
+        errores = {}
+        for campo in campos_no_negativos:
+            valor = getattr(self, campo)
+            if valor is not None and valor < 0:
+                errores[campo] = "Este valor no puede ser negativo."
+        if errores:
+            raise ValidationError(errores)
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+
 class PrecioProducto(models.Model):
     class Moneda(models.TextChoices):
         CLP = "CLP", "Peso chileno"

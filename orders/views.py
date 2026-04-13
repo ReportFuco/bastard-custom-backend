@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from cart.models import Carrito, ItemCarrito
-from inventory.models import InventoryItem
+from inventory.models import InventoryItem, MovimientoInventario
 from .models import Order, OrderItem
 from .serializers import OrderSerializer, CheckoutSerializer
 
@@ -122,21 +122,21 @@ class CheckoutView(APIView):
 
         product_ids = [item.producto_id for item in cart_items]
         inventory_map = {
-            inventory_item.product_id: inventory_item
-            for inventory_item in InventoryItem.objects.select_for_update().filter(product_id__in=product_ids)
+            inventory_item.producto_id: inventory_item
+            for inventory_item in InventoryItem.objects.select_for_update().filter(producto_id__in=product_ids)
         }
 
         stock_errors = []
         for item in cart_items:
             inventory_item = inventory_map.get(item.producto_id)
-            available = inventory_item.available_quantity if inventory_item else 0
-            if available < item.cantidad:
+            cantidad_disponible = inventory_item.cantidad_disponible if inventory_item else 0
+            if cantidad_disponible < item.cantidad:
                 stock_errors.append(
                     {
                         "product_id": item.producto_id,
                         "nombre": item.producto.nombre,
                         "requested": item.cantidad,
-                        "available": available,
+                        "available": cantidad_disponible,
                     }
                 )
 
@@ -148,11 +148,6 @@ class CheckoutView(APIView):
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )
-
-        for item in cart_items:
-            inventory_item = inventory_map[item.producto_id]
-            inventory_item.available_quantity -= item.cantidad
-            inventory_item.save(update_fields=["available_quantity", "updated_at"])
 
         order = Order.objects.create(
             user=request.user,
@@ -182,6 +177,27 @@ class CheckoutView(APIView):
             )
 
         OrderItem.objects.bulk_create(order_items)
+
+        movimientos = []
+        for item in cart_items:
+            inventory_item = inventory_map[item.producto_id]
+            cantidad_anterior = inventory_item.cantidad_disponible
+            inventory_item.cantidad_disponible -= item.cantidad
+            inventory_item.save(update_fields=["cantidad_disponible", "actualizado_en"])
+            movimientos.append(
+                MovimientoInventario(
+                    item_inventario=inventory_item,
+                    tipo=MovimientoInventario.Tipo.SALIDA,
+                    cantidad=item.cantidad,
+                    cantidad_anterior=cantidad_anterior,
+                    cantidad_posterior=inventory_item.cantidad_disponible,
+                    motivo="Descuento por checkout",
+                    referencia=f"order:{order.id}",
+                    creado_por=request.user,
+                )
+            )
+        MovimientoInventario.objects.bulk_create(movimientos)
+
         ItemCarrito.objects.filter(carrito=carrito).delete()
         carrito.status = Carrito.Status.CHECKED_OUT
         carrito.checked_out_at = timezone.now()

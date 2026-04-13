@@ -4,7 +4,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from products.models import Categorias, Producto
-from .models import InventoryItem
+from .models import InventoryItem, MovimientoInventario
 
 User = get_user_model()
 
@@ -19,8 +19,9 @@ class InventoryPermissionsTests(APITestCase):
             precio="10000.00",
             activo=True,
         )
-        InventoryItem.objects.create(product=producto, available_quantity=5, reserved_quantity=2)
+        InventoryItem.objects.create(producto=producto, cantidad_disponible=5, cantidad_reservada=2)
         self.url = reverse("inventory-items")
+        self.movimientos_url = reverse("inventory-movimientos")
         self.admin = User.objects.create_superuser(
             username="admin",
             email="admin@test.com",
@@ -41,5 +42,29 @@ class InventoryPermissionsTests(APITestCase):
         self.client.force_authenticate(user=self.admin)
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data[0]["total_quantity"], 7)
-        self.assertTrue(response.data[0]["in_stock"])
+        self.assertEqual(response.data[0]["cantidad_total"], 7)
+        self.assertTrue(response.data[0]["en_stock"])
+
+    def test_inventory_movimientos_requires_admin(self):
+        self.client.force_authenticate(user=self.user)
+        response = self.client.get(self.movimientos_url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_inventory_movimientos_admin_can_see_data(self):
+        item = InventoryItem.objects.first()
+        MovimientoInventario.objects.create(
+            item_inventario=item,
+            tipo=MovimientoInventario.Tipo.AJUSTE,
+            cantidad=1,
+            cantidad_anterior=5,
+            cantidad_posterior=6,
+            motivo="Ajuste manual",
+            referencia="manual:1",
+            creado_por=self.admin,
+        )
+
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.get(self.movimientos_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data[0]["tipo"], MovimientoInventario.Tipo.AJUSTE)
+        self.assertEqual(response.data[0]["producto_nombre"], "Mouse")

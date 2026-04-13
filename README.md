@@ -105,6 +105,7 @@ Endpoints relevantes de órdenes/checkout:
 
 Endpoints de inventario (solo admin):
 - `GET /api/inventory/items/`
+- `GET /api/inventory/movimientos/`
 
 Más detalle en:
 - `docs/API.md`

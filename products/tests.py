@@ -2,7 +2,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from .models import Categorias, Marca, PrecioProducto, Producto, Subcategoria
+from .models import Categorias, Marca, PrecioProducto, Producto, Subcategoria, TablaNutricional
 
 
 class ProductsFiltersTests(APITestCase):
@@ -89,3 +89,24 @@ class ProductsFiltersTests(APITestCase):
         )
         self.producto.refresh_from_db()
         self.assertEqual(str(self.producto.precio), "19990.00")
+
+    def test_product_detail_includes_tabla_nutricional(self):
+        TablaNutricional.objects.create(
+            producto=self.producto,
+            porcion="100 g",
+            energia_kcal="250.00",
+            proteinas_g="12.00",
+            grasas_totales_g="8.00",
+            grasas_saturadas_g="2.50",
+            carbohidratos_g="30.00",
+            azucares_g="5.00",
+            fibra_g="4.00",
+            sodio_mg="150.00",
+        )
+
+        url = reverse("products-detail", kwargs={"slug": self.producto.slug})
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("tabla_nutricional", response.data)
+        self.assertEqual(response.data["tabla_nutricional"]["porcion"], "100 g")

@@ -1,11 +1,28 @@
 from django.contrib import admin
 
-from .models import InventoryItem
+from .models import InventoryItem, MovimientoInventario
 
 
 @admin.register(InventoryItem)
 class InventoryItemAdmin(admin.ModelAdmin):
-    list_display = ("product", "available_quantity", "reserved_quantity", "total_quantity", "in_stock", "updated_at")
-    search_fields = ("product__nombre", "product__slug")
-    list_filter = ("updated_at",)
-    readonly_fields = ("updated_at",)
+    list_display = ("producto", "cantidad_disponible", "cantidad_reservada", "cantidad_total", "en_stock", "actualizado_en")
+    search_fields = ("producto__nombre", "producto__slug")
+    list_filter = ("actualizado_en",)
+    readonly_fields = ("actualizado_en",)
+
+
+@admin.register(MovimientoInventario)
+class MovimientoInventarioAdmin(admin.ModelAdmin):
+    list_display = (
+        "item_inventario",
+        "tipo",
+        "cantidad",
+        "cantidad_anterior",
+        "cantidad_posterior",
+        "referencia",
+        "creado_por",
+        "creado_en",
+    )
+    search_fields = ("item_inventario__producto__nombre", "item_inventario__producto__slug", "referencia")
+    list_filter = ("tipo", "creado_en")
+    readonly_fields = ("creado_en",)

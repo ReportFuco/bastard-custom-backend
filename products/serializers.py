@@ -7,6 +7,7 @@ from .models import (
     ProductoColor,
     ProductoImagen,
     Subcategoria,
+    TablaNutricional,
 )
 
 
@@ -68,6 +69,24 @@ class ProductoImagenSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductoImagen
         fields = ["imagen", "nombre", "principal"]
+
+
+class TablaNutricionalSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TablaNutricional
+        fields = [
+            "porcion",
+            "energia_kcal",
+            "proteinas_g",
+            "grasas_totales_g",
+            "grasas_saturadas_g",
+            "carbohidratos_g",
+            "azucares_g",
+            "fibra_g",
+            "sodio_mg",
+            "creado_en",
+            "actualizado_en",
+        ]
 
 
 class ProductoSerializer(serializers.ModelSerializer):
@@ -135,6 +154,7 @@ class ProductoDetailSerializer(serializers.ModelSerializer):
     subcategoria_nombre = serializers.CharField(source="subcategoria.nombre", read_only=True)
     subcategoria_slug = serializers.CharField(source="subcategoria.slug", read_only=True)
     precio_info = PrecioProductoSerializer(source="precio_config", read_only=True)
+    tabla_nutricional = TablaNutricionalSerializer(read_only=True)
     imagen_principal = serializers.SerializerMethodField()
     imagenes = ProductoImagenSerializer(many=True)
     variantes_color = ProductoColorSerializer(many=True)
@@ -157,6 +177,7 @@ class ProductoDetailSerializer(serializers.ModelSerializer):
             "subcategoria_slug",
             "description",
             "precio_info",
+            "tabla_nutricional",
             "variantes_color",
             "imagen_principal",
             "imagenes",

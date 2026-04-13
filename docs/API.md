@@ -1,13 +1,13 @@
 # API.md
 
-Resumen breve de la API actual de `backend-tienda-online` para dar contexto al frontend.
+Resumen actualizado de la API de `backend-tienda-online` para frontend e integraciones.
 
 Base URL:
 - `/api/`
 
 Autenticación:
 - JWT Bearer Token
-- En endpoints protegidos usar header:
+- En endpoints protegidos usar:
   - `Authorization: Bearer <access_token>`
 
 ---
@@ -62,18 +62,6 @@ Body:
 - `GET /api/users/me/`
 - `PATCH /api/users/me/`
 
-Respuesta ejemplo:
-```json
-{
-  "id": 1,
-  "username": "francisco",
-  "email": "francisco@mail.com",
-  "first_name": "Francisco",
-  "last_name": "Arancibia",
-  "is_customer": true
-}
-```
-
 ---
 
 ## Regiones / Comunas / Direcciones
@@ -109,8 +97,8 @@ Body ejemplo para crear dirección:
 - `GET /api/products/`
 
 Filtros disponibles:
-- `q` → búsqueda por nombre, descripción o categoría
-- `categoria` → slug de categoría
+- `q` (nombre, descripción o categoría)
+- `categoria` (slug de categoría)
 - `precio_min`
 - `precio_max`
 
@@ -119,29 +107,14 @@ Ejemplos:
 - `GET /api/products/?categoria=ropa`
 - `GET /api/products/?precio_min=10000&precio_max=30000`
 
-Respuesta ejemplo:
-```json
-[
-  {
-    "id": 1,
-    "nombre": "Polera Negra",
-    "slug": "polera-negra",
-    "categoria_id": 2,
-    "categoria_nombre": "Ropa",
-    "categoria_slug": "ropa",
-    "precio": "19990.00",
-    "description": "Polera algodón premium",
-    "created_at": "2026-04-10T12:00:00Z",
-    "updated_at": "2026-04-10T12:10:00Z"
-  }
-]
-```
-
 ### Detalle de producto
 - `GET /api/products/{slug}/`
+- Incluye `tabla_nutricional` (si existe para el producto).
 
-### Categorías
+### Catálogos auxiliares
 - `GET /api/products/categorias/`
+- `GET /api/products/subcategorias/`
+- `GET /api/products/marcas/`
 
 ---
 
@@ -151,36 +124,11 @@ Todos los endpoints de carrito requieren usuario autenticado.
 
 ### Ver carrito actual
 - `GET /api/cart/`
-- siempre devuelve el carrito activo del usuario (se crea si no existe)
+- Siempre devuelve el carrito activo del usuario (se crea si no existe).
 
 ### Historial de carritos
 - `GET /api/cart/history/`
-- devuelve carritos del usuario (activo y cerrados)
-
-Respuesta ejemplo:
-```json
-{
-  "id": 1,
-  "created_at": "2026-04-10T12:00:00Z",
-  "updated_at": "2026-04-10T12:10:00Z",
-  "total_items": 3,
-  "total": "59970.00",
-  "items": [
-    {
-      "id": 7,
-      "producto": {
-        "id": 1,
-        "nombre": "Polera Negra",
-        "slug": "polera-negra",
-        "precio": "19990.00",
-        "categoria_nombre": "Ropa"
-      },
-      "cantidad": 3,
-      "subtotal": "59970.00"
-    }
-  ]
-}
-```
+- Devuelve carritos del usuario (activo y cerrados).
 
 ### Agregar item al carrito
 - `POST /api/cart/items/`
@@ -232,40 +180,92 @@ Body ejemplo:
 }
 ```
 
-Qué hace:
-- toma el carrito activo del usuario
-- valida y descuenta stock en inventario
-- calcula costo de envío en backend
-- genera una orden
-- guarda snapshot de dirección
-- guarda snapshot de productos y precios
-- marca ese carrito como `checked_out` y crea un nuevo carrito `active`
+Header opcional (idempotencia):
+- `Idempotency-Key: <clave-unica>` (máximo 64 caracteres)
 
-## Estado actual / pendientes
+Qué hace:
+- Toma el carrito activo del usuario.
+- Valida stock disponible.
+- Descuenta inventario.
+- Registra movimientos de inventario por cada producto descontado.
+- Calcula costo de envío en backend.
+- Genera una orden.
+- Guarda snapshot de dirección.
+- Guarda snapshot de productos y precios.
+- Marca ese carrito como `checked_out` y crea un nuevo carrito `active`.
+
+---
+
+## Inventario (solo admin)
+
+Estos endpoints requieren usuario admin.
+
+### Items de inventario
+- `GET /api/inventory/items/`
+
+Campos relevantes de respuesta:
+- `producto_id`
+- `producto_nombre`
+- `producto_slug`
+- `cantidad_disponible`
+- `cantidad_reservada`
+- `cantidad_total`
+- `en_stock`
+- `actualizado_en`
+
+### Movimientos de inventario
+- `GET /api/inventory/movimientos/`
+
+Filtros opcionales:
+- `producto_id`
+- `tipo`
+
+Tipos soportados:
+- `entrada`
+- `salida`
+- `ajuste`
+- `reserva`
+- `liberacion`
+
+Campos relevantes de respuesta:
+- `item_inventario_id`
+- `producto_id`
+- `producto_nombre`
+- `tipo`
+- `cantidad`
+- `cantidad_anterior`
+- `cantidad_posterior`
+- `motivo`
+- `referencia`
+- `creado_por_id`
+- `creado_por_username`
+- `creado_en`
+
+---
+
+## Estado actual
 
 Implementado:
-- auth JWT base
-- perfil usuario
-- direcciones
-- catálogo de productos
-- categorías
-- carrito funcional
-- órdenes base
-- checkout base desde carrito
+- Auth JWT base.
+- Perfil de usuario.
+- Direcciones.
+- Catálogo de productos (categorías, subcategorías y marcas).
+- Carrito funcional.
+- Checkout con control de stock.
+- Inventario en español.
+- Historial de movimientos de inventario.
 
 Pendiente:
-- inventario real
-- validación de stock
-- pagos
-- estados avanzados de fulfillment
-- documentación más formal tipo OpenAPI/Swagger
+- Integración de pagos.
+- Estados avanzados de fulfillment.
+- Documentación OpenAPI/Swagger.
 
 ---
 
 ## Nota para frontend
 
-Convención sugerida para el front:
-- guardar `access` token en memoria o almacenamiento seguro
-- usar `refresh` para renovar sesión
-- tratar `slug` como identificador público de producto
-- refrescar carrito después de cada operación de add/update/delete
+Convención sugerida:
+- Guardar `access` token en memoria o almacenamiento seguro.
+- Usar `refresh` para renovar sesión.
+- Tratar `slug` como identificador público de producto.
+- Refrescar carrito después de cada operación de add/update/delete.

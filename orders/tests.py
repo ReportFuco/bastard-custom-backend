@@ -4,7 +4,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from cart.models import Carrito, ItemCarrito
-from inventory.models import InventoryItem
+from inventory.models import InventoryItem, MovimientoInventario
 from products.models import Categorias, Producto
 from users.models import Comuna, Direccion, Region
 
@@ -40,7 +40,7 @@ class CheckoutFlowTests(APITestCase):
             precio="19990.00",
             activo=True,
         )
-        InventoryItem.objects.create(product=self.producto, available_quantity=10)
+        InventoryItem.objects.create(producto=self.producto, cantidad_disponible=10)
 
         carrito = Carrito.objects.create(user=self.user)
         ItemCarrito.objects.create(carrito=carrito, producto=self.producto, cantidad=2)
@@ -90,9 +90,9 @@ class CheckoutFlowTests(APITestCase):
         self.assertEqual(Order.objects.count(), 1)
 
     def test_checkout_fails_on_insufficient_stock(self):
-        inventory_item = InventoryItem.objects.get(product=self.producto)
-        inventory_item.available_quantity = 1
-        inventory_item.save(update_fields=["available_quantity"])
+        inventory_item = InventoryItem.objects.get(producto=self.producto)
+        inventory_item.cantidad_disponible = 1
+        inventory_item.save(update_fields=["cantidad_disponible"])
 
         url = reverse("orders-checkout")
         response = self.client.post(url, {"direccion_id": self.direccion.id}, format="json")
@@ -118,3 +118,16 @@ class CheckoutFlowTests(APITestCase):
         self.assertEqual(previous_cart.status, Carrito.Status.CHECKED_OUT)
         self.assertIsNotNone(previous_cart.checked_out_at)
         self.assertEqual(Carrito.objects.filter(user=self.user, status=Carrito.Status.ACTIVE).count(), 1)
+
+    def test_checkout_creates_inventory_movement(self):
+        url = reverse("orders-checkout")
+        response = self.client.post(url, {"direccion_id": self.direccion.id}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        movimiento = MovimientoInventario.objects.get(
+            item_inventario__producto=self.producto,
+            tipo=MovimientoInventario.Tipo.SALIDA,
+        )
+        self.assertEqual(movimiento.cantidad, 2)
+        self.assertEqual(movimiento.cantidad_anterior, 10)
+        self.assertEqual(movimiento.cantidad_posterior, 8)
