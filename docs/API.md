@@ -95,6 +95,7 @@ Body ejemplo para crear dirección:
 
 ### Listado de productos
 - `GET /api/products/`
+- Incluye `imagen_principal` para mostrar la foto principal en cards/listas.
 
 Filtros disponibles:
 - `q` (nombre, descripción o categoría)

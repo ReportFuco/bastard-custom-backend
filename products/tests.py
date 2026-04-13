@@ -1,8 +1,9 @@
 from django.urls import reverse
+from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from .models import Categorias, Marca, PrecioProducto, Producto, Subcategoria, TablaNutricional
+from .models import Categorias, Marca, PrecioProducto, Producto, ProductoImagen, Subcategoria, TablaNutricional
 
 
 class ProductsFiltersTests(APITestCase):
@@ -110,3 +111,36 @@ class ProductsFiltersTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn("tabla_nutricional", response.data)
         self.assertEqual(response.data["tabla_nutricional"]["porcion"], "100 g")
+
+    def test_products_list_includes_imagen_principal(self):
+        ProductoImagen.objects.create(
+            producto=self.producto,
+            imagen=SimpleUploadedFile("principal.jpg", b"contenido", content_type="image/jpeg"),
+            principal=True,
+            nombre="Principal",
+        )
+        url = reverse("products-list")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("imagen_principal", response.data[0])
+        self.assertIsNotNone(response.data[0]["imagen_principal"])
+        self.assertEqual(response.data[0]["imagen_principal"]["nombre"], "Principal")
+
+    def test_al_marcar_nueva_imagen_principal_desmarca_la_anterior(self):
+        primera = ProductoImagen.objects.create(
+            producto=self.producto,
+            imagen=SimpleUploadedFile("primera.jpg", b"img1", content_type="image/jpeg"),
+            principal=True,
+            nombre="Primera",
+        )
+        segunda = ProductoImagen.objects.create(
+            producto=self.producto,
+            imagen=SimpleUploadedFile("segunda.jpg", b"img2", content_type="image/jpeg"),
+            principal=True,
+            nombre="Segunda",
+        )
+
+        primera.refresh_from_db()
+        segunda.refresh_from_db()
+        self.assertFalse(primera.principal)
+        self.assertTrue(segunda.principal)

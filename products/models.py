@@ -2,6 +2,7 @@ from decimal import Decimal
 
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models import Q
 from django.utils import timezone
 
 
@@ -235,6 +236,21 @@ class ProductoImagen(models.Model):
     class Meta:
         verbose_name = "Imagen de producto"
         verbose_name_plural = "Imagenes de producto"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["producto"],
+                condition=Q(principal=True),
+                name="producto_una_imagen_principal",
+            ),
+        ]
+
+    def save(self, *args, **kwargs):
+        if self.principal and self.producto_id:
+            ProductoImagen.objects.filter(
+                producto_id=self.producto_id,
+                principal=True,
+            ).exclude(pk=self.pk).update(principal=False)
+        return super().save(*args, **kwargs)
 
 
 class Color(models.Model):

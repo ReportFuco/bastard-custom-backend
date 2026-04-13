@@ -68,7 +68,7 @@ class ProductoColorSerializer(serializers.ModelSerializer):
 class ProductoImagenSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductoImagen
-        fields = ["imagen", "nombre", "principal"]
+        fields = ["imagen", "nombre"]
 
 
 class TablaNutricionalSerializer(serializers.ModelSerializer):
@@ -102,6 +102,7 @@ class ProductoSerializer(serializers.ModelSerializer):
     precio_lista = serializers.SerializerMethodField()
     precio_oferta = serializers.SerializerMethodField()
     moneda = serializers.SerializerMethodField()
+    imagen_principal = serializers.SerializerMethodField()
 
     class Meta:
         model = Producto
@@ -123,8 +124,7 @@ class ProductoSerializer(serializers.ModelSerializer):
             "precio_oferta",
             "moneda",
             "description",
-            "created_at",
-            "updated_at",
+            "imagen_principal"
         ]
 
     def get_precio_lista(self, obj: Producto):
@@ -141,6 +141,12 @@ class ProductoSerializer(serializers.ModelSerializer):
         if hasattr(obj, "precio_config"):
             return obj.precio_config.moneda
         return "CLP"
+
+    def get_imagen_principal(self, obj: Producto):
+        for imagen in obj.imagenes.all():
+            if imagen.principal:
+                return ProductoImagenSerializer(imagen).data
+        return None
 
 
 class ProductoDetailSerializer(serializers.ModelSerializer):
@@ -186,5 +192,7 @@ class ProductoDetailSerializer(serializers.ModelSerializer):
         ]
 
     def get_imagen_principal(self, obj: Producto):
-        imagen = obj.imagenes.filter(principal=True).first()
-        return ProductoImagenSerializer(imagen).data if imagen else None
+        for imagen in obj.imagenes.all():
+            if imagen.principal:
+                return ProductoImagenSerializer(imagen).data
+        return None
