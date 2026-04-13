@@ -156,7 +156,7 @@ class CheckoutView(APIView):
             shipping_cost=shipping_cost,
             total=total,
             notes=notes,
-            shipping_label=direccion.label,
+            shipping_label=direccion.etiqueta,
             shipping_address=direccion.direccion,
             shipping_comuna=direccion.comuna.nombre,
             shipping_region=direccion.comuna.region.nombre,

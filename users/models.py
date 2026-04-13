@@ -43,13 +43,13 @@ class Comuna(models.Model):
 
 
 class Direccion(models.Model):
-    user = models.ForeignKey(
+    usuario = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name="direcciones"
     )
 
-    label = models.CharField(max_length=50)
+    etiqueta = models.CharField(max_length=50)
     direccion = models.CharField(max_length=255)
 
     comuna = models.ForeignKey(
@@ -57,15 +57,15 @@ class Direccion(models.Model):
         on_delete=models.PROTECT
     )
 
-    is_default = models.BooleanField(default=False)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    es_predeterminada = models.BooleanField(default=False)
+    creado_en = models.DateTimeField(auto_now_add=True)
+    actualizado_en = models.DateTimeField(auto_now=True)
 
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=["user"],
-                condition=Q(is_default=True),
-                name="uniq_default_direccion_per_user",
+                fields=["usuario"],
+                condition=Q(es_predeterminada=True),
+                name="direccion_predeterminada_unica_por_usuario",
             )
         ]

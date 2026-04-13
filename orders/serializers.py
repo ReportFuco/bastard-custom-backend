@@ -56,10 +56,10 @@ class CheckoutSerializer(serializers.Serializer):
             self.fields["direccion_id"].queryset = Direccion.objects.all()
             return
 
-        self.fields["direccion_id"].queryset = Direccion.objects.filter(user=request.user)
+        self.fields["direccion_id"].queryset = Direccion.objects.filter(usuario=request.user)
 
     def validate_direccion(self, value):
         request = self.context["request"]
-        if not request.user.is_superuser and value.user_id != request.user.id:
+        if not request.user.is_superuser and value.usuario_id != request.user.id:
             raise serializers.ValidationError("La direccion no pertenece al usuario autenticado.")
         return value

@@ -92,16 +92,16 @@ class DireccionSerializer(serializers.ModelSerializer):
         model = Direccion
         fields = [
             "id",
-            "label",
+            "etiqueta",
             "direccion",
             "comuna",
             "comuna_nombre",
             "region_nombre",
-            "is_default",
-            "created_at",
-            "updated_at",
+            "es_predeterminada",
+            "creado_en",
+            "actualizado_en",
         ]
-        read_only_fields = ["id", "created_at", "updated_at"]
+        read_only_fields = ["id", "creado_en", "actualizado_en"]
 
     def validate(self, attrs):
         if self.instance is None and not attrs.get("comuna"):
@@ -109,14 +109,17 @@ class DireccionSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
-        user = self.context["request"].user
-        is_default = validated_data.get("is_default", False)
-        if is_default:
-            Direccion.objects.filter(user=user, is_default=True).update(is_default=False)
-        return Direccion.objects.create(user=user, **validated_data)
+        usuario = self.context["request"].user
+        es_predeterminada = validated_data.get("es_predeterminada", False)
+        if es_predeterminada:
+            Direccion.objects.filter(usuario=usuario, es_predeterminada=True).update(es_predeterminada=False)
+        return Direccion.objects.create(usuario=usuario, **validated_data)
 
     def update(self, instance, validated_data):
-        is_default = validated_data.get("is_default", instance.is_default)
-        if is_default:
-            Direccion.objects.filter(user=instance.user, is_default=True).exclude(pk=instance.pk).update(is_default=False)
+        es_predeterminada = validated_data.get("es_predeterminada", instance.es_predeterminada)
+        if es_predeterminada:
+            Direccion.objects.filter(
+                usuario=instance.usuario,
+                es_predeterminada=True,
+            ).exclude(pk=instance.pk).update(es_predeterminada=False)
         return super().update(instance, validated_data)

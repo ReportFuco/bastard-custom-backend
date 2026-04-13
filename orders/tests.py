@@ -25,11 +25,11 @@ class CheckoutFlowTests(APITestCase):
         self.region = Region.objects.create(nombre="Metropolitana")
         self.comuna = Comuna.objects.create(nombre="Santiago", region=self.region)
         self.direccion = Direccion.objects.create(
-            user=self.user,
-            label="Casa",
+            usuario=self.user,
+            etiqueta="Casa",
             direccion="Av Siempre Viva 123",
             comuna=self.comuna,
-            is_default=True,
+            es_predeterminada=True,
         )
 
         self.categoria = Categorias.objects.create(nombre="Ropa", slug="ropa")

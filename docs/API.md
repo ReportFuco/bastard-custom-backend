@@ -82,10 +82,10 @@ Body:
 Body ejemplo para crear dirección:
 ```json
 {
-  "label": "Casa",
+  "etiqueta": "Casa",
   "direccion": "Av. Siempre Viva 123",
   "comuna": 10,
-  "is_default": true
+  "es_predeterminada": true
 }
 ```
 
@@ -240,6 +240,22 @@ Campos relevantes de respuesta:
 - `creado_por_id`
 - `creado_por_username`
 - `creado_en`
+
+---
+
+## Promociones (público)
+
+### Franjas promocionales activas
+- `GET /api/promotions/bands/`
+
+Comportamiento:
+- Devuelve solo franjas con `activa=true`.
+- Respeta rango de vigencia (`fecha_inicio` / `fecha_fin`).
+- Ordena por `prioridad` descendente y luego por actualización.
+
+Campos relevantes:
+- En español: `titulo`, `mensaje`, `etiqueta_cta`, `url_cta`, `color_fondo`, `color_texto`.
+- Compatibles con front actual: `title`, `message`, `ctaLabel`, `ctaUrl`, `backgroundColor`, `textColor`.
 
 ---
 

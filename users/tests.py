@@ -19,18 +19,18 @@ class DireccionConstraintsTests(TestCase):
 
     def test_only_one_default_address_per_user(self):
         Direccion.objects.create(
-            user=self.user,
-            label="Casa",
+            usuario=self.user,
+            etiqueta="Casa",
             direccion="Uno",
             comuna=self.comuna,
-            is_default=True,
+            es_predeterminada=True,
         )
 
         with self.assertRaises(IntegrityError):
             Direccion.objects.create(
-                user=self.user,
-                label="Oficina",
+                usuario=self.user,
+                etiqueta="Oficina",
                 direccion="Dos",
                 comuna=self.comuna,
-                is_default=True,
+                es_predeterminada=True,
             )

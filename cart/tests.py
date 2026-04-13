@@ -24,11 +24,11 @@ class CartHistoryTests(APITestCase):
         region = Region.objects.create(nombre="Metropolitana")
         comuna = Comuna.objects.create(nombre="Santiago", region=region)
         self.direccion = Direccion.objects.create(
-            user=self.user,
-            label="Casa",
+            usuario=self.user,
+            etiqueta="Casa",
             direccion="Uno",
             comuna=comuna,
-            is_default=True,
+            es_predeterminada=True,
         )
 
         categoria = Categorias.objects.create(nombre="Accesorios", slug="accesorios")

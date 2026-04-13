@@ -12,6 +12,7 @@ Módulos presentes:
 - `cart`
 - `orders`
 - `inventory`
+- `promotions`
 
 Módulos más avanzados hoy:
 - `users`
@@ -106,6 +107,9 @@ Endpoints relevantes de órdenes/checkout:
 Endpoints de inventario (solo admin):
 - `GET /api/inventory/items/`
 - `GET /api/inventory/movimientos/`
+
+Endpoints de promociones (público):
+- `GET /api/promotions/bands/`
 
 Más detalle en:
 - `docs/API.md`

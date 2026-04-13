@@ -51,14 +51,14 @@ class DireccionViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         queryset = (
             Direccion.objects
-            .select_related("comuna", "comuna__region", "user")
-            .order_by("-is_default", "label")
+            .select_related("comuna", "comuna__region", "usuario")
+            .order_by("-es_predeterminada", "etiqueta")
         )
 
         if self.request.user.is_superuser:
             return queryset
 
-        return queryset.filter(user=self.request.user)
+        return queryset.filter(usuario=self.request.user)
 
 
 class RegionListView(generics.ListAPIView):
