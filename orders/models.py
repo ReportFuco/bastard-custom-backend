@@ -34,6 +34,8 @@ class Order(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+        verbose_name = "Orden"
+        verbose_name_plural = "Ordenes"
         constraints = [
             models.UniqueConstraint(
                 fields=["user", "idempotency_key"],
@@ -66,6 +68,8 @@ class OrderItem(models.Model):
         return f"{self.quantity} x {self.product_name}"
 
     class Meta:
+        verbose_name = "Item de orden"
+        verbose_name_plural = "Items de orden"
         constraints = [
             models.CheckConstraint(
                 condition=Q(unit_price__gte=0) & Q(line_total__gte=0),

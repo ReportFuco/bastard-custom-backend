@@ -1,4 +1,8 @@
+from decimal import Decimal
+
+from django.core.exceptions import ValidationError
 from django.db import models
+from django.utils import timezone
 
 
 class Categorias(models.Model):
@@ -7,8 +11,47 @@ class Categorias(models.Model):
     slug = models.CharField(max_length=150, unique=True)
     activo = models.BooleanField(default=True)
 
+    class Meta:
+        verbose_name = "Categoria"
+        verbose_name_plural = "Categorias"
+
     def __str__(self) -> str:
         return f"{self.nombre}"
+
+
+class Subcategoria(models.Model):
+    categoria = models.ForeignKey(
+        Categorias,
+        on_delete=models.CASCADE,
+        related_name="subcategorias",
+    )
+    nombre = models.CharField(max_length=150)
+    slug = models.CharField(max_length=150, unique=True)
+    activo = models.BooleanField(default=True)
+
+    class Meta:
+        unique_together = ("categoria", "nombre")
+        ordering = ("nombre",)
+        verbose_name = "Subcategoria"
+        verbose_name_plural = "Subcategorias"
+
+    def __str__(self) -> str:
+        return f"{self.categoria.nombre} / {self.nombre}"
+
+
+class Marca(models.Model):
+    nombre = models.CharField(max_length=150, unique=True)
+    slug = models.CharField(max_length=150, unique=True)
+    pais_origen = models.CharField(max_length=120, null=True, blank=True)
+    activo = models.BooleanField(default=True)
+
+    class Meta:
+        verbose_name = "Marca"
+        verbose_name_plural = "Marcas"
+        ordering = ("nombre",)
+
+    def __str__(self) -> str:
+        return self.nombre
 
 
 class Producto(models.Model):
@@ -19,6 +62,20 @@ class Producto(models.Model):
         on_delete=models.PROTECT, 
         related_name="productos"
     )
+    marca = models.ForeignKey(
+        Marca,
+        on_delete=models.PROTECT,
+        related_name="productos",
+        null=True,
+        blank=True,
+    )
+    subcategoria = models.ForeignKey(
+        Subcategoria,
+        on_delete=models.PROTECT,
+        related_name="productos",
+        null=True,
+        blank=True,
+    )
 
     slug = models.CharField(max_length=255, unique=True)
     precio = models.DecimalField(max_digits=10, decimal_places=2)
@@ -27,8 +84,91 @@ class Producto(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    class Meta:
+        verbose_name = "Producto"
+        verbose_name_plural = "Productos"
+
     def __str__(self) -> str:
-        return f"{self.nombre}"    
+        return f"{self.nombre}"
+
+    @property
+    def precio_vigente(self):
+        if not hasattr(self, "precio_config"):
+            return self.precio
+        return self.precio_config.precio_final
+
+    def clean(self):
+        super().clean()
+        if self.subcategoria and self.subcategoria.categoria_id != self.categoria_id:
+            raise ValidationError(
+                {
+                    "subcategoria": "La subcategoria debe pertenecer a la categoria seleccionada."
+                }
+            )
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+
+class PrecioProducto(models.Model):
+    class Moneda(models.TextChoices):
+        CLP = "CLP", "Peso chileno"
+        USD = "USD", "Dolar"
+
+    producto = models.OneToOneField(
+        Producto,
+        on_delete=models.CASCADE,
+        related_name="precio_config",
+    )
+    precio_lista = models.DecimalField(max_digits=10, decimal_places=2)
+    precio_oferta = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    moneda = models.CharField(max_length=3, choices=Moneda.choices, default=Moneda.CLP)
+    activo = models.BooleanField(default=True)
+    vigencia_desde = models.DateTimeField(null=True, blank=True)
+    vigencia_hasta = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Precio"
+        verbose_name_plural = "Precios"
+
+    def __str__(self) -> str:
+        return f"{self.producto.nombre} - {self.precio_final} {self.moneda}"
+
+    @property
+    def vigente(self) -> bool:
+        now = timezone.now()
+        if self.vigencia_desde and now < self.vigencia_desde:
+            return False
+        if self.vigencia_hasta and now > self.vigencia_hasta:
+            return False
+        return self.activo
+
+    @property
+    def precio_final(self):
+        if self.vigente and self.precio_oferta is not None:
+            return self.precio_oferta
+        return self.precio_lista
+
+    def clean(self):
+        super().clean()
+        if self.precio_oferta is not None and self.precio_oferta > self.precio_lista:
+            raise ValidationError(
+                {"precio_oferta": "El precio de oferta no puede ser mayor al precio de lista."}
+            )
+        if self.vigencia_desde and self.vigencia_hasta and self.vigencia_hasta < self.vigencia_desde:
+            raise ValidationError(
+                {"vigencia_hasta": "La vigencia hasta no puede ser anterior a vigencia desde."}
+            )
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        result = super().save(*args, **kwargs)
+        self.producto.precio = Decimal(self.precio_final)
+        self.producto.save(update_fields=["precio", "updated_at"])
+        return result
 
 
 class ProductoImagen(models.Model):
@@ -42,6 +182,10 @@ class ProductoImagen(models.Model):
     principal = models.BooleanField(default=False)
     nombre = models.CharField(max_length=150)
 
+    class Meta:
+        verbose_name = "Imagen de producto"
+        verbose_name_plural = "Imagenes de producto"
+
 
 class Color(models.Model):
     nombre = models.CharField(max_length=30)
@@ -54,6 +198,8 @@ class Color(models.Model):
 
     class Meta:
         unique_together = ("nombre", "hex_code")
+        verbose_name = "Color"
+        verbose_name_plural = "Colores"
 
     def __str__(self):
         return f"{self.nombre} ({self.hex_code})"
@@ -73,3 +219,5 @@ class ProductoColor(models.Model):
 
     class Meta:
         unique_together = ("producto", "color")
+        verbose_name = "Color de producto"
+        verbose_name_plural = "Colores de producto"

@@ -5,9 +5,11 @@ from rest_framework import generics, permissions
 from rest_framework.exceptions import ValidationError
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
-from .models import Producto, Categorias
+from .models import Producto, Categorias, Subcategoria, Marca
 from .serializers import (
     CategoriaSerializer,
+    MarcaSerializer,
+    SubcategoriaSerializer,
     ProductoSerializer,
     ProductoDetailSerializer,
 )
@@ -25,6 +27,38 @@ class CategoriaListView(generics.ListAPIView):
         return queryset
 
 
+class SubcategoriaListView(generics.ListAPIView):
+    serializer_class = SubcategoriaSerializer
+    permission_classes = [permissions.AllowAny]
+
+    def get_queryset(self):
+        queryset = Subcategoria.objects.filter(
+            activo=True,
+            categoria__activo=True,
+        ).select_related("categoria").order_by("nombre")
+        q = self.request.query_params.get("q")
+        categoria_slug = self.request.query_params.get("categoria")
+        if q:
+            queryset = queryset.filter(
+                Q(nombre__icontains=q) | Q(categoria__nombre__icontains=q)
+            )
+        if categoria_slug:
+            queryset = queryset.filter(categoria__slug=categoria_slug)
+        return queryset
+
+
+class MarcaListView(generics.ListAPIView):
+    serializer_class = MarcaSerializer
+    permission_classes = [permissions.AllowAny]
+
+    def get_queryset(self):
+        queryset = Marca.objects.filter(activo=True).order_by("nombre")
+        q = self.request.query_params.get("q")
+        if q:
+            queryset = queryset.filter(nombre__icontains=q)
+        return queryset
+
+
 class ProductoViewSet(ReadOnlyModelViewSet):
     lookup_field = "slug"
     serializer_class = ProductoSerializer
@@ -34,13 +68,16 @@ class ProductoViewSet(ReadOnlyModelViewSet):
         queryset = (
             Producto.objects
             .filter(activo=True, categoria__activo=True)
-            .select_related("categoria")
+            .select_related("categoria", "subcategoria", "marca", "precio_config")
             .prefetch_related("imagenes", "variantes_color__color")
             .order_by("-created_at")
         )
+        queryset = queryset.filter(Q(marca__activo=True) | Q(marca__isnull=True))
 
         q = self.request.query_params.get("q")
         categoria_slug = self.request.query_params.get("categoria")
+        subcategoria_slug = self.request.query_params.get("subcategoria")
+        marca_slug = self.request.query_params.get("marca")
         precio_min = self.request.query_params.get("precio_min")
         precio_max = self.request.query_params.get("precio_max")
 
@@ -49,10 +86,16 @@ class ProductoViewSet(ReadOnlyModelViewSet):
                 Q(nombre__icontains=q)
                 | Q(description__icontains=q)
                 | Q(categoria__nombre__icontains=q)
+                | Q(subcategoria__nombre__icontains=q)
+                | Q(marca__nombre__icontains=q)
             )
 
         if categoria_slug:
             queryset = queryset.filter(categoria__slug=categoria_slug)
+        if subcategoria_slug:
+            queryset = queryset.filter(subcategoria__slug=subcategoria_slug)
+        if marca_slug:
+            queryset = queryset.filter(marca__slug=marca_slug)
 
         if precio_min:
             try:

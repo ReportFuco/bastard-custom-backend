@@ -13,8 +13,8 @@ class InventoryItem(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        verbose_name = "Inventory item"
-        verbose_name_plural = "Inventory items"
+        verbose_name = "Item de inventario"
+        verbose_name_plural = "Items de inventario"
         constraints = [
             models.CheckConstraint(
                 condition=Q(available_quantity__gte=0) & Q(reserved_quantity__gte=0),
