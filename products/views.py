@@ -1,8 +1,9 @@
 from decimal import Decimal, InvalidOperation
 
-from django.db.models import Q
+from django.db.models import F, Q
 from rest_framework import generics, permissions
 from rest_framework.exceptions import ValidationError
+from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from .models import Producto, Categorias, Subcategoria, Marca
@@ -63,6 +64,13 @@ class ProductoViewSet(ReadOnlyModelViewSet):
     lookup_field = "slug"
     serializer_class = ProductoSerializer
     permission_classes = [permissions.AllowAny]
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        Producto.objects.filter(pk=instance.pk).update(vistas=F("vistas") + 1)
+        instance.refresh_from_db(fields=["vistas"])
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
 
     def get_queryset(self):
         queryset = (

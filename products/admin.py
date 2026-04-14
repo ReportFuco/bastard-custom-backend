@@ -36,7 +36,8 @@ class TablaNutricionalInline(admin.StackedInline):
 @admin.register(Producto)
 class ProductoAdmin(admin.ModelAdmin):
     form = ProductoAdminForm
-    list_display = ("id", "nombre", "marca", "precio", "activo")
+    list_display = ("id", "nombre", "marca", "precio", "vistas", "activo")
+    readonly_fields = ("vistas",)
     prepopulated_fields = {"slug": ("nombre",)}
     list_filter = ("activo", "categoria", "subcategoria", "marca")
     search_fields = ("nombre", "marca__nombre")
