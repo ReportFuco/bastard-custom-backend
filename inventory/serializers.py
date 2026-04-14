@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import InventoryItem, MovimientoInventario
+from .models import InventoryItem, MovimientoInventario, ProductoProveedor, Proveedor
 
 
 class InventoryItemSerializer(serializers.ModelSerializer):
@@ -48,4 +48,39 @@ class MovimientoInventarioSerializer(serializers.ModelSerializer):
             "creado_por_id",
             "creado_por_username",
             "creado_en",
+        ]
+
+
+class ProveedorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Proveedor
+        fields = [
+            "id",
+            "nombre_proveedor",
+            "contacto_proveedor",
+            "email_contacto",
+            "activo",
+            "creado_en",
+            "actualizado_en",
+        ]
+
+
+class ProductoProveedorSerializer(serializers.ModelSerializer):
+    producto_nombre = serializers.CharField(source="producto.nombre", read_only=True)
+    proveedor_nombre = serializers.CharField(source="proveedor.nombre_proveedor", read_only=True)
+
+    class Meta:
+        model = ProductoProveedor
+        fields = [
+            "id",
+            "producto",
+            "producto_nombre",
+            "proveedor",
+            "proveedor_nombre",
+            "codigo_proveedor",
+            "costo_compra",
+            "tiempo_reposicion_dias",
+            "activo",
+            "creado_en",
+            "actualizado_en",
         ]

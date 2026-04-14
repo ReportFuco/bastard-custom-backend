@@ -7,7 +7,7 @@ from .phone import normalize_chile_phone_number
 
 class User(AbstractUser):
     email = models.EmailField(unique=True)
-    phone_number = models.CharField(max_length=11, blank=True, default="")
+    phone_number = models.CharField(max_length=11, blank=True, default="", unique=True)
     is_customer = models.BooleanField(default=True)
 
     REQUIRED_FIELDS = ["email"]

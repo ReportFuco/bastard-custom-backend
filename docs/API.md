@@ -251,6 +251,57 @@ Campos relevantes de respuesta:
 - `creado_por_username`
 - `creado_en`
 
+### Proveedores
+- `GET /api/inventory/proveedores/`
+- `POST /api/inventory/proveedores/`
+- `GET /api/inventory/proveedores/{id}/`
+- `PUT /api/inventory/proveedores/{id}/`
+- `PATCH /api/inventory/proveedores/{id}/`
+- `DELETE /api/inventory/proveedores/{id}/`
+
+Filtro opcional en listado:
+- `q` (nombre de proveedor)
+
+Body ejemplo para crear proveedor:
+```json
+{
+  "nombre_proveedor": "Distribuidora Norte SPA",
+  "contacto_proveedor": "+56 9 9123 4567",
+  "email_contacto": "contacto@distribuidoranorte.cl",
+  "activo": true
+}
+```
+
+Nota:
+- `contacto_proveedor` se normaliza a formato `569XXXXXXXX` en backend.
+
+### Producto-Proveedor
+- `GET /api/inventory/producto-proveedores/`
+- `POST /api/inventory/producto-proveedores/`
+- `GET /api/inventory/producto-proveedores/{id}/`
+- `PUT /api/inventory/producto-proveedores/{id}/`
+- `PATCH /api/inventory/producto-proveedores/{id}/`
+- `DELETE /api/inventory/producto-proveedores/{id}/`
+
+Filtros opcionales en listado:
+- `producto_id`
+- `proveedor_id`
+
+Body ejemplo para crear relación:
+```json
+{
+  "producto": 1,
+  "proveedor": 3,
+  "codigo_proveedor": "SKU-PRV-001",
+  "costo_compra": "12990.00",
+  "tiempo_reposicion_dias": 7,
+  "activo": true
+}
+```
+
+Regla:
+- No se permiten duplicados para la misma combinación `producto + proveedor`.
+
 ---
 
 ## Estado actual
@@ -264,6 +315,7 @@ Implementado:
 - Checkout con control de stock.
 - Inventario en español.
 - Historial de movimientos de inventario.
+- Proveedores y relación producto-proveedor.
 
 Pendiente:
 - Integración de pagos.

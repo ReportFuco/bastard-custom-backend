@@ -1,5 +1,6 @@
 from django.db import models
 from django.db.models import Q
+from users.phone import normalize_chile_phone_number
 
 
 class InventoryItem(models.Model):
@@ -78,3 +79,57 @@ class MovimientoInventario(models.Model):
             f"{self.item_inventario.producto.nombre} | {self.get_tipo_display()} | "
             f"{self.cantidad_anterior}->{self.cantidad_posterior}"
         )
+
+
+class Proveedor(models.Model):
+    nombre_proveedor = models.CharField(max_length=120, unique=True)
+    contacto_proveedor = models.CharField(max_length=11)
+    email_contacto = models.EmailField(unique=True)
+    activo = models.BooleanField(default=True)
+    creado_en = models.DateTimeField(auto_now_add=True)
+    actualizado_en = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Proveedor"
+        verbose_name_plural = "Proveedores"
+        ordering = ("nombre_proveedor",)
+
+    def __str__(self) -> str:
+        return self.nombre_proveedor
+
+    def save(self, *args, **kwargs):
+        self.contacto_proveedor = normalize_chile_phone_number(self.contacto_proveedor)
+        return super().save(*args, **kwargs)
+
+
+class ProductoProveedor(models.Model):
+    producto = models.ForeignKey(
+        "products.Producto",
+        on_delete=models.CASCADE,
+        related_name="proveedores",
+    )
+    proveedor = models.ForeignKey(
+        "inventory.Proveedor",
+        on_delete=models.CASCADE,
+        related_name="productos",
+    )
+    codigo_proveedor = models.CharField(max_length=80, blank=True)
+    costo_compra = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    tiempo_reposicion_dias = models.PositiveIntegerField(default=0)
+    activo = models.BooleanField(default=True)
+    creado_en = models.DateTimeField(auto_now_add=True)
+    actualizado_en = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Producto proveedor"
+        verbose_name_plural = "Productos proveedores"
+        ordering = ("producto__nombre", "proveedor__nombre_proveedor")
+        constraints = [
+            models.UniqueConstraint(
+                fields=["producto", "proveedor"],
+                name="producto_proveedor_unico",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.producto.nombre} - {self.proveedor.nombre_proveedor}"
