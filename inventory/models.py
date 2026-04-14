@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
 from users.phone import normalize_chile_phone_number
@@ -85,6 +86,10 @@ class Proveedor(models.Model):
     nombre_proveedor = models.CharField(max_length=120, unique=True)
     contacto_proveedor = models.CharField(max_length=11)
     email_contacto = models.EmailField(unique=True)
+    sitio_web = models.URLField(blank=True)
+    direccion = models.CharField(max_length=255, blank=True)
+    latitud = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    longitud = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     activo = models.BooleanField(default=True)
     creado_en = models.DateTimeField(auto_now_add=True)
     actualizado_en = models.DateTimeField(auto_now=True)
@@ -97,8 +102,19 @@ class Proveedor(models.Model):
     def __str__(self) -> str:
         return self.nombre_proveedor
 
+    def clean(self):
+        super().clean()
+        errors = {}
+        if self.latitud is not None and not (-90 <= self.latitud <= 90):
+            errors["latitud"] = "La latitud debe estar entre -90 y 90."
+        if self.longitud is not None and not (-180 <= self.longitud <= 180):
+            errors["longitud"] = "La longitud debe estar entre -180 y 180."
+        if errors:
+            raise ValidationError(errors)
+
     def save(self, *args, **kwargs):
         self.contacto_proveedor = normalize_chile_phone_number(self.contacto_proveedor)
+        self.full_clean()
         return super().save(*args, **kwargs)
 
 

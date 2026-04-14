@@ -34,11 +34,14 @@ class ProveedorAdmin(admin.ModelAdmin):
         "nombre_proveedor",
         "contacto_proveedor",
         "email_contacto",
+        "sitio_web",
+        "latitud",
+        "longitud",
         "activo",
         "creado_en",
         "actualizado_en",
     )
-    search_fields = ("nombre_proveedor", "contacto_proveedor", "email_contacto")
+    search_fields = ("nombre_proveedor", "contacto_proveedor", "email_contacto", "direccion")
     list_filter = ("activo", "creado_en")
     readonly_fields = ("creado_en", "actualizado_en")
 

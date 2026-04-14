@@ -268,12 +268,20 @@ Body ejemplo para crear proveedor:
   "nombre_proveedor": "Distribuidora Norte SPA",
   "contacto_proveedor": "+56 9 9123 4567",
   "email_contacto": "contacto@distribuidoranorte.cl",
+  "sitio_web": "https://distribuidoranorte.cl",
+  "direccion": "Av. Apoquindo 1234, Las Condes, Santiago",
+  "latitud": -33.414539,
+  "longitud": -70.581815,
   "activo": true
 }
 ```
 
 Nota:
 - `contacto_proveedor` se normaliza a formato `569XXXXXXXX` en backend.
+- `sitio_web`, `direccion`, `latitud` y `longitud` son opcionales.
+- Rango coordenadas:
+  - `latitud` entre `-90` y `90`
+  - `longitud` entre `-180` y `180`
 
 ### Producto-Proveedor
 - `GET /api/inventory/producto-proveedores/`
