@@ -57,7 +57,7 @@ class Marca(models.Model):
 
 class Producto(models.Model):
     
-    nombre = models.CharField(max_length=100)
+    nombre = models.CharField(max_length=255)
     categoria = models.ForeignKey(
         Categorias, 
         on_delete=models.PROTECT, 
@@ -80,7 +80,7 @@ class Producto(models.Model):
 
     slug = models.CharField(max_length=255, unique=True)
     precio = models.DecimalField(max_digits=10, decimal_places=2)
-    description = models.CharField(max_length=255, null=True, blank=True)
+    description = models.CharField(max_length=500, null=True, blank=True)
     vistas = models.PositiveIntegerField(default=0, editable=False)
     activo = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
