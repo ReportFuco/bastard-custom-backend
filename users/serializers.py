@@ -94,6 +94,7 @@ class DireccionSerializer(serializers.ModelSerializer):
             "id",
             "etiqueta",
             "direccion",
+            "numero",
             "comuna",
             "comuna_nombre",
             "region_nombre",

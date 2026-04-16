@@ -23,6 +23,7 @@ class OrderSerializer(serializers.ModelSerializer):
     direccion_envio_id = serializers.IntegerField(source="direccion_envio.id", read_only=True, allow_null=True)
     direccion_etiqueta = serializers.CharField(source="direccion_envio.etiqueta", read_only=True, allow_null=True)
     direccion = serializers.CharField(source="direccion_envio.direccion", read_only=True, allow_null=True)
+    direccion_numero = serializers.CharField(source="direccion_envio.numero", read_only=True, allow_null=True)
     comuna = serializers.CharField(source="direccion_envio.comuna.nombre", read_only=True, allow_null=True)
     region = serializers.CharField(source="direccion_envio.comuna.region.nombre", read_only=True, allow_null=True)
 
@@ -38,6 +39,7 @@ class OrderSerializer(serializers.ModelSerializer):
             "direccion_envio_id",
             "direccion_etiqueta",
             "direccion",
+            "direccion_numero",
             "comuna",
             "region",
             "items",

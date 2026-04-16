@@ -156,7 +156,8 @@ class OrderAdmin(admin.ModelAdmin):
                 {
                     "id": direccion.id,
                     "texto": (
-                        f"{direccion.etiqueta} - {direccion.direccion} "
+                        f"{direccion.etiqueta} - {direccion.direccion} {direccion.numero}".strip()
+                        + " "
                         f"({direccion.comuna.nombre}, {direccion.comuna.region.nombre})"
                     ),
                 }

@@ -27,7 +27,8 @@ class CheckoutFlowTests(APITestCase):
         self.direccion = Direccion.objects.create(
             usuario=self.user,
             etiqueta="Casa",
-            direccion="Av Siempre Viva 123",
+            direccion="Av Siempre Viva",
+            numero="123",
             comuna=self.comuna,
             es_predeterminada=True,
         )
@@ -139,6 +140,7 @@ class CheckoutFlowTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data["direccion_etiqueta"], "Casa")
         self.assertEqual(response.data["direccion_envio_id"], self.direccion.id)
+        self.assertEqual(response.data["direccion_numero"], "123")
 
     def test_checkout_fails_if_user_has_no_addresses(self):
         Direccion.objects.filter(usuario=self.user).delete()
@@ -157,7 +159,8 @@ class CheckoutFlowTests(APITestCase):
         direccion_ajena = Direccion.objects.create(
             usuario=otro_usuario,
             etiqueta="Ajena",
-            direccion="Calle 999",
+            direccion="Calle",
+            numero="999",
             comuna=self.comuna,
             es_predeterminada=True,
         )
@@ -186,6 +189,7 @@ class OrderAccessIsolationTests(APITestCase):
             usuario=self.user_a,
             etiqueta="Casa A",
             direccion="Uno",
+            numero="1",
             comuna=comuna,
             es_predeterminada=True,
         )
@@ -193,6 +197,7 @@ class OrderAccessIsolationTests(APITestCase):
             usuario=self.user_b,
             etiqueta="Casa B",
             direccion="Dos",
+            numero="2",
             comuna=comuna,
             es_predeterminada=True,
         )
@@ -246,6 +251,7 @@ class OrderAdminSecurityTests(APITestCase):
             usuario=staff,
             etiqueta="Casa Staff",
             direccion="Uno",
+            numero="1",
             comuna=comuna,
             es_predeterminada=True,
         )
@@ -253,6 +259,7 @@ class OrderAdminSecurityTests(APITestCase):
             usuario=otro,
             etiqueta="Casa Otro",
             direccion="Dos",
+            numero="2",
             comuna=comuna,
             es_predeterminada=True,
         )

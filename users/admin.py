@@ -32,7 +32,7 @@ class CustomUserAdmin(UserAdmin):
 @admin.register(Direccion)
 class DireccionAdmin(admin.ModelAdmin):
     form = DireccionAdminForm
-    list_display = ("usuario", "etiqueta", "direccion", "comuna", "es_predeterminada", "creado_en")
+    list_display = ("usuario", "etiqueta", "direccion", "numero", "comuna", "es_predeterminada", "creado_en")
     list_filter = ("es_predeterminada", "comuna__region")
 
     def get_urls(self):

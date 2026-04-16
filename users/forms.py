@@ -41,7 +41,7 @@ class DireccionAdminForm(forms.ModelForm):
 
     class Meta:
         model = Direccion
-        fields = ["usuario", "etiqueta", "direccion", "region", "comuna", "es_predeterminada"]
+        fields = ["usuario", "etiqueta", "direccion", "numero", "region", "comuna", "es_predeterminada"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

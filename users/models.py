@@ -51,6 +51,7 @@ class Direccion(models.Model):
 
     etiqueta = models.CharField(max_length=50)
     direccion = models.CharField(max_length=255)
+    numero = models.CharField(max_length=20, blank=True, default="")
 
     comuna = models.ForeignKey(
         Comuna,

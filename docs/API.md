@@ -1,14 +1,19 @@
 # API.md
 
-Resumen actualizado de la API de `backend-tienda-online` para frontend e integraciones.
+Resumen actualizado de la API de `bastard-custom-backend` para frontend e integraciones.
 
 Base URL:
 - `/api/`
 
-Autenticación:
+Autenticacion:
 - JWT Bearer Token
 - En endpoints protegidos usar:
   - `Authorization: Bearer <access_token>`
+
+Formato general:
+- Respuestas en JSON
+- No hay paginacion global configurada en DRF
+- La API usa nombres de campos reales del backend, varios en espanol
 
 ---
 
@@ -24,10 +29,16 @@ Body ejemplo:
   "email": "francisco@mail.com",
   "first_name": "Francisco",
   "last_name": "Arancibia",
+  "phone_number": "56991234567",
   "password": "12345678",
   "password_confirm": "12345678"
 }
 ```
+
+Notas:
+- `password` y `password_confirm` deben coincidir
+- `email` debe ser unico
+- `phone_number` se normaliza en backend a formato chileno `569XXXXXXXX`
 
 ### Login
 - `POST /api/users/auth/login/`
@@ -62,6 +73,15 @@ Body:
 - `GET /api/users/me/`
 - `PATCH /api/users/me/`
 
+Campos de perfil:
+- `id`
+- `username`
+- `email` (solo lectura)
+- `first_name`
+- `last_name`
+- `phone_number`
+- `is_customer` (solo lectura)
+
 ---
 
 ## Regiones / Comunas / Direcciones
@@ -69,25 +89,72 @@ Body:
 ### Regiones
 - `GET /api/users/regions/`
 
+Respuesta por item:
+```json
+{
+  "id": 1,
+  "nombre": "Metropolitana"
+}
+```
+
 ### Comunas
 - `GET /api/users/comunas/`
 - `GET /api/users/comunas/?region_id=1`
 
+Notas:
+- `region_id` debe ser numerico
+
+Respuesta por item:
+```json
+{
+  "id": 10,
+  "nombre": "Las Condes",
+  "region": {
+    "id": 1,
+    "nombre": "Metropolitana"
+  }
+}
+```
+
 ### Direcciones del usuario
 - `GET /api/users/direcciones/`
 - `POST /api/users/direcciones/`
+- `GET /api/users/direcciones/{id}/`
 - `PATCH /api/users/direcciones/{id}/`
 - `DELETE /api/users/direcciones/{id}/`
 
-Body ejemplo para crear dirección:
+Body ejemplo para crear direccion:
 ```json
 {
-  "label": "Casa",
-  "direccion": "Av. Siempre Viva 123",
+  "etiqueta": "Casa",
+  "direccion": "Av. Siempre Viva",
+  "numero": "123",
   "comuna": 10,
-  "is_default": true
+  "es_predeterminada": true
 }
 ```
+
+Respuesta por item:
+```json
+{
+  "id": 1,
+  "etiqueta": "Casa",
+  "direccion": "Av. Siempre Viva",
+  "numero": "123",
+  "comuna": 10,
+  "comuna_nombre": "Las Condes",
+  "region_nombre": "Metropolitana",
+  "es_predeterminada": true,
+  "creado_en": "2026-04-16T12:00:00Z",
+  "actualizado_en": "2026-04-16T12:00:00Z"
+}
+```
+
+Notas:
+- Los nombres correctos de campos son `etiqueta` y `es_predeterminada`
+- `direccion` representa la calle o via principal
+- `numero` guarda la numeracion o complemento corto
+- Si una direccion se guarda con `es_predeterminada=true`, el backend desmarca la direccion predeterminada anterior del mismo usuario
 
 ---
 
@@ -97,24 +164,149 @@ Body ejemplo para crear dirección:
 - `GET /api/products/`
 
 Filtros disponibles:
-- `q` (nombre, descripción o categoría)
-- `categoria` (slug de categoría)
+- `q` (nombre, descripcion, categoria, subcategoria o marca)
+- `categoria` (slug de categoria)
+- `subcategoria` (slug de subcategoria)
+- `marca` (slug de marca)
 - `precio_min`
 - `precio_max`
 
 Ejemplos:
 - `GET /api/products/?q=polera`
 - `GET /api/products/?categoria=ropa`
+- `GET /api/products/?subcategoria=poleras`
+- `GET /api/products/?marca=nike`
 - `GET /api/products/?precio_min=10000&precio_max=30000`
+
+Validaciones:
+- `precio_min` y `precio_max` deben ser numericos
+- `precio_min` no puede ser mayor que `precio_max`
+
+Respuesta por item:
+```json
+{
+  "id": 1,
+  "nombre": "Producto",
+  "slug": "producto",
+  "categoria_id": 2,
+  "categoria_nombre": "Ropa",
+  "categoria_slug": "ropa",
+  "marca_id": 3,
+  "marca_nombre": "Marca",
+  "marca_slug": "marca",
+  "subcategoria_id": 4,
+  "subcategoria_nombre": "Poleras",
+  "subcategoria_slug": "poleras",
+  "precio": "19990.00",
+  "precio_lista": "24990.00",
+  "precio_oferta": "19990.00",
+  "moneda": "CLP",
+  "description": "Descripcion",
+  "imagen_principal": {
+    "imagen": "/media/productos/item.jpg",
+    "nombre": "Vista principal"
+  }
+}
+```
 
 ### Detalle de producto
 - `GET /api/products/{slug}/`
-- Incluye `tabla_nutricional` (si existe para el producto).
 
-### Catálogos auxiliares
+Respuesta relevante:
+- Todo lo del listado, mas:
+  - `precio_info`
+  - `tabla_nutricional`
+  - `variantes_color`
+  - `imagenes`
+  - `created_at`
+  - `updated_at`
+
+Ejemplo parcial:
+```json
+{
+  "id": 1,
+  "nombre": "Producto",
+  "slug": "producto",
+  "precio": "19990.00",
+  "precio_info": {
+    "precio_lista": "24990.00",
+    "precio_oferta": "19990.00",
+    "precio_final": "19990.00",
+    "moneda": "CLP",
+    "activo": true,
+    "vigencia_desde": null,
+    "vigencia_hasta": null
+  },
+  "tabla_nutricional": null,
+  "variantes_color": [
+    {
+      "color": "#FFFFFF",
+      "nombre": "Blanco"
+    }
+  ],
+  "imagenes": [
+    {
+      "imagen": "/media/productos/item.jpg",
+      "nombre": "Vista principal"
+    }
+  ]
+}
+```
+
+Nota:
+- Al consultar detalle se incrementa el contador de vistas del producto
+
+### Catalogos auxiliares
 - `GET /api/products/categorias/`
 - `GET /api/products/subcategorias/`
 - `GET /api/products/marcas/`
+
+Filtros soportados:
+- Categorias:
+  - `q`
+- Subcategorias:
+  - `q`
+  - `categoria` (slug de categoria)
+- Marcas:
+  - `q`
+
+---
+
+## Promociones
+
+### Franjas promocionales activas
+- `GET /api/promotions/bands/`
+
+Devuelve solo promociones activas y vigentes segun fecha.
+
+Respuesta por item:
+```json
+{
+  "id": 1,
+  "titulo": "Envio gratis",
+  "mensaje": "En compras sobre $50.000",
+  "etiqueta_cta": "Ver productos",
+  "url_cta": "/catalogo",
+  "color_fondo": "#CAFD00",
+  "color_texto": "#1A2200",
+  "activa": true,
+  "fecha_inicio": null,
+  "fecha_fin": null,
+  "prioridad": 10,
+  "creado_en": "2026-04-16T12:00:00Z",
+  "actualizado_en": "2026-04-16T12:00:00Z",
+  "title": "Envio gratis",
+  "message": "En compras sobre $50.000",
+  "ctaLabel": "Ver productos",
+  "ctaUrl": "/catalogo",
+  "backgroundColor": "#CAFD00",
+  "textColor": "#1A2200"
+}
+```
+
+Nota:
+- El endpoint expone tanto claves en espanol como aliases pensados para frontend (`title`, `message`, `ctaLabel`, etc.)
+- Este enpoint va dirigido a la franja superior
 
 ---
 
@@ -124,11 +316,17 @@ Todos los endpoints de carrito requieren usuario autenticado.
 
 ### Ver carrito actual
 - `GET /api/cart/`
-- Siempre devuelve el carrito activo del usuario (se crea si no existe).
+
+Notas:
+- Siempre devuelve el carrito `active` del usuario
+- Si no existe, se crea automaticamente
 
 ### Historial de carritos
 - `GET /api/cart/history/`
-- Devuelve carritos del usuario (activo y cerrados).
+
+Notas:
+- Devuelve todos los carritos del usuario ordenados por fecha de creacion descendente
+- Puede incluir estados `active`, `checked_out` y `abandoned`
 
 ### Agregar item al carrito
 - `POST /api/cart/items/`
@@ -140,6 +338,11 @@ Body:
   "cantidad": 2
 }
 ```
+
+Notas:
+- Si el producto ya existe en el carrito activo, el backend suma la cantidad
+- Devuelve `201` si crea un item nuevo
+- Devuelve `200` si el item ya existia y solo actualiza cantidad
 
 ### Actualizar cantidad de un item
 - `PATCH /api/cart/items/{item_id}/`
@@ -157,23 +360,74 @@ Body:
 ### Vaciar carrito
 - `DELETE /api/cart/clear/`
 
+### Respuesta del carrito
+```json
+{
+  "id": 1,
+  "status": "active",
+  "checked_out_at": null,
+  "created_at": "2026-04-16T12:00:00Z",
+  "updated_at": "2026-04-16T12:00:00Z",
+  "total_items": 3,
+  "total": "39980.00",
+  "items": [
+    {
+      "id": 7,
+      "producto": {
+        "id": 1,
+        "nombre": "Producto",
+        "slug": "producto",
+        "precio": "19990.00",
+        "categoria_nombre": "Ropa"
+      },
+      "cantidad": 2,
+      "subtotal": "39980.00"
+    }
+  ]
+}
+```
+
 ---
 
-## Órdenes / Checkout
+## Ordenes / Checkout
 
-Todos los endpoints de órdenes requieren usuario autenticado.
+Todos los endpoints de ordenes requieren usuario autenticado.
 
-### Listado de órdenes
+### Listado de ordenes
 - `GET /api/orders/`
+
+Notas:
+- Usuario comun: solo ve sus ordenes
+- Admin: ve todas las ordenes
 
 ### Detalle de orden
 - `GET /api/orders/{id}/`
-- Incluye dirección referenciada desde `users.Direccion`:
-  - `direccion_envio_id`
-  - `direccion_etiqueta`
-  - `direccion`
-  - `comuna`
-  - `region`
+
+Campos principales:
+- `id`
+- `status`
+- `subtotal`
+- `shipping_cost`
+- `total`
+- `notes`
+- `direccion_envio_id`
+- `direccion_etiqueta`
+- `direccion`
+- `direccion_numero`
+- `comuna`
+- `region`
+- `items`
+- `created_at`
+- `updated_at`
+
+Item de orden:
+- `id`
+- `product`
+- `product_name`
+- `product_slug`
+- `unit_price`
+- `quantity`
+- `line_total`
 
 ### Checkout desde carrito
 - `POST /api/orders/checkout/`
@@ -182,27 +436,48 @@ Body ejemplo:
 ```json
 {
   "direccion_id": 1,
-  "notes": "Entregar en conserjería"
+  "notes": "Entregar en conserjeria"
 }
 ```
 
 `direccion_id` es opcional:
-- Si no se envía, se usa la dirección predeterminada del usuario.
-- Si el usuario no tiene direcciones, el checkout responde error y debe crear una en `/api/users/direcciones/`.
+- Si se envia, debe pertenecer al usuario autenticado
+- Si no se envia, el backend intenta usar la direccion predeterminada
+- Si no existe direccion predeterminada, usa la ultima direccion del usuario por `actualizado_en`
+- Si el usuario no tiene direcciones, responde error y debe crear una en `/api/users/direcciones/`
 
-Header opcional (idempotencia):
-- `Idempotency-Key: <clave-unica>` (máximo 64 caracteres)
+Header opcional de idempotencia:
+- `Idempotency-Key: <clave-unica>`
+- Maximo 64 caracteres
+- Si se repite la misma clave para el mismo usuario, el backend devuelve la orden ya creada
 
-Qué hace:
-- Toma el carrito activo del usuario.
-- Valida stock disponible.
-- Descuenta inventario.
-- Registra movimientos de inventario por cada producto descontado.
-- Calcula costo de envío en backend.
-- Genera una orden.
-- Guarda snapshot de dirección.
-- Guarda snapshot de productos y precios.
-- Marca ese carrito como `checked_out` y crea un nuevo carrito `active`.
+Que hace el checkout:
+- Toma el carrito activo del usuario
+- Valida que el carrito no este vacio
+- Valida que no existan productos inactivos
+- Valida stock disponible
+- Calcula costo de envio en backend
+- Genera la orden y sus items
+- Descuenta inventario
+- Registra movimientos de inventario por cada descuento
+- Marca el carrito como `checked_out`
+- Crea un nuevo carrito `active`
+
+Regla actual de envio:
+- Si `subtotal >= 50000.00`, `shipping_cost = 0.00`
+- Si `subtotal < 50000.00`, `shipping_cost = 2990.00`
+
+Importante:
+- La orden guarda referencia a `users.Direccion` mediante `direccion_envio`
+- El serializer expone campos planos de direccion (`direccion`, `direccion_numero`, `comuna`, `region`, etc.) leidos desde esa relacion
+- No hay snapshot inmutable de direccion en el modelo actual
+
+Errores esperables:
+- Carrito vacio
+- Productos inactivos en el carrito
+- Stock insuficiente
+- `Idempotency-Key` demasiado larga
+- Usuario sin direcciones
 
 ---
 
@@ -214,6 +489,7 @@ Estos endpoints requieren usuario admin.
 - `GET /api/inventory/items/`
 
 Campos relevantes de respuesta:
+- `id`
 - `producto_id`
 - `producto_nombre`
 - `producto_slug`
@@ -238,6 +514,7 @@ Tipos soportados:
 - `liberacion`
 
 Campos relevantes de respuesta:
+- `id`
 - `item_inventario_id`
 - `producto_id`
 - `producto_nombre`
@@ -266,7 +543,7 @@ Body ejemplo para crear proveedor:
 ```json
 {
   "nombre_proveedor": "Distribuidora Norte SPA",
-  "contacto_proveedor": "+56 9 9123 4567",
+  "contacto_proveedor": "56991234567",
   "email_contacto": "contacto@distribuidoranorte.cl",
   "sitio_web": "https://distribuidoranorte.cl",
   "direccion": "Av. Apoquindo 1234, Las Condes, Santiago",
@@ -276,12 +553,11 @@ Body ejemplo para crear proveedor:
 }
 ```
 
-Nota:
-- `contacto_proveedor` se normaliza a formato `569XXXXXXXX` en backend.
-- `sitio_web`, `direccion`, `latitud` y `longitud` son opcionales.
-- Rango coordenadas:
-  - `latitud` entre `-90` y `90`
-  - `longitud` entre `-180` y `180`
+Notas:
+- `contacto_proveedor` se normaliza a formato `569XXXXXXXX`
+- `sitio_web`, `direccion`, `latitud` y `longitud` son opcionales
+- `latitud` debe estar entre `-90` y `90`
+- `longitud` debe estar entre `-180` y `180`
 
 ### Producto-Proveedor
 - `GET /api/inventory/producto-proveedores/`
@@ -295,7 +571,7 @@ Filtros opcionales en listado:
 - `producto_id`
 - `proveedor_id`
 
-Body ejemplo para crear relación:
+Body ejemplo para crear relacion:
 ```json
 {
   "producto": 1,
@@ -308,34 +584,37 @@ Body ejemplo para crear relación:
 ```
 
 Regla:
-- No se permiten duplicados para la misma combinación `producto + proveedor`.
+- No se permiten duplicados para la misma combinacion `producto + proveedor`
 
 ---
 
 ## Estado actual
 
 Implementado:
-- Auth JWT base.
-- Perfil de usuario.
-- Direcciones.
-- Catálogo de productos (categorías, subcategorías y marcas).
-- Carrito funcional.
-- Checkout con control de stock.
-- Inventario en español.
-- Historial de movimientos de inventario.
-- Proveedores y relación producto-proveedor.
+- Auth JWT base
+- Perfil de usuario
+- Direcciones
+- Catalogo de productos
+- Franjas promocionales publicas
+- Carrito funcional
+- Checkout con control de stock
+- Inventario
+- Historial de movimientos de inventario
+- Proveedores y relacion producto-proveedor
 
 Pendiente:
-- Integración de pagos.
-- Estados avanzados de fulfillment.
-- Documentación OpenAPI/Swagger.
+- Integracion de pagos
+- Estados avanzados de fulfillment
+- Documentacion OpenAPI/Swagger
 
 ---
 
 ## Nota para frontend
 
-Convención sugerida:
-- Guardar `access` token en memoria o almacenamiento seguro.
-- Usar `refresh` para renovar sesión.
-- Tratar `slug` como identificador público de producto.
-- Refrescar carrito después de cada operación de add/update/delete.
+Convenciones sugeridas:
+- Guardar `access` token en memoria o almacenamiento seguro
+- Usar `refresh` para renovar sesion
+- Tratar `slug` como identificador publico de producto
+- Refrescar carrito despues de cada operacion de add/update/delete
+- No asumir paginacion
+- No traducir nombres de campos al consumir endpoints de escritura: usar exactamente los nombres del contrato (`etiqueta`, `es_predeterminada`, `direccion_id`, etc.)
