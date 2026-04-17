@@ -23,6 +23,7 @@ class Order(models.Model):
     shipping_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     total = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     notes = models.TextField(blank=True, default="")
+    stock_reingresado = models.BooleanField(default=False)
     direccion_envio = models.ForeignKey(
         "users.Direccion",
         on_delete=models.PROTECT,

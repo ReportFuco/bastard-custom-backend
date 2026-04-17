@@ -3,6 +3,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework import status
 from rest_framework.test import APITestCase
 
+from inventory.models import InventoryItem
 from .models import Categorias, Marca, PrecioProducto, Producto, ProductoImagen, Subcategoria, TablaNutricional
 
 
@@ -90,6 +91,11 @@ class ProductsFiltersTests(APITestCase):
         )
         self.producto.refresh_from_db()
         self.assertEqual(str(self.producto.precio), "19990.00")
+
+    def test_product_creation_auto_creates_inventory_item(self):
+        inventory_item = InventoryItem.objects.get(producto=self.producto)
+        self.assertEqual(inventory_item.cantidad_disponible, 0)
+        self.assertEqual(inventory_item.cantidad_reservada, 0)
 
     def test_product_detail_includes_tabla_nutricional(self):
         TablaNutricional.objects.create(

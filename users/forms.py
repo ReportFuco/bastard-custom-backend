@@ -14,7 +14,7 @@ class UserAdminCreationForm(UserCreationForm):
     def clean_phone_number(self):
         value = self.cleaned_data.get("phone_number", "")
         try:
-            return normalize_chile_phone_number(value)
+            return normalize_chile_phone_number(value) or None
         except ValidationError as exc:
             raise forms.ValidationError(exc.message) from exc
 
@@ -27,7 +27,7 @@ class UserAdminChangeForm(UserChangeForm):
     def clean_phone_number(self):
         value = self.cleaned_data.get("phone_number", "")
         try:
-            return normalize_chile_phone_number(value)
+            return normalize_chile_phone_number(value) or None
         except ValidationError as exc:
             raise forms.ValidationError(exc.message) from exc
 

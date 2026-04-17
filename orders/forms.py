@@ -4,6 +4,17 @@ from .models import Order, OrderItem
 
 
 class OrderAdminForm(forms.ModelForm):
+    def clean(self):
+        cleaned_data = super().clean()
+        if not self.instance.pk:
+            return cleaned_data
+
+        previous_status = self.instance.status
+        next_status = cleaned_data.get("status", previous_status)
+        if previous_status == Order.Status.CANCELED and next_status != Order.Status.CANCELED:
+            self.add_error("status", "Una orden cancelada no puede volver a un estado activo.")
+        return cleaned_data
+
     class Meta:
         model = Order
         fields = "__all__"
@@ -12,10 +23,11 @@ class OrderAdminForm(forms.ModelForm):
             "idempotency_key": "Clave de idempotencia",
             "status": "Estado",
             "subtotal": "Subtotal",
-            "shipping_cost": "Costo de envío",
+            "shipping_cost": "Costo de envio",
             "total": "Total",
             "notes": "Notas",
-            "direccion_envio": "Dirección de envío",
+            "stock_reingresado": "Stock reingresado",
+            "direccion_envio": "Direccion de envio",
             "created_at": "Creado en",
             "updated_at": "Actualizado en",
         }
@@ -32,5 +44,5 @@ class OrderItemAdminForm(forms.ModelForm):
             "product_slug": "Slug del producto",
             "unit_price": "Precio unitario",
             "quantity": "Cantidad",
-            "line_total": "Total línea",
+            "line_total": "Total linea",
         }

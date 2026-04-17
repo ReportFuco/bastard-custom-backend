@@ -7,13 +7,14 @@ from .phone import normalize_chile_phone_number
 
 class User(AbstractUser):
     email = models.EmailField(unique=True)
-    phone_number = models.CharField(max_length=11, blank=True, default="", unique=True)
+    phone_number = models.CharField(max_length=11, blank=True, null=True, default=None, unique=True)
     is_customer = models.BooleanField(default=True)
 
     REQUIRED_FIELDS = ["email"]
 
     def save(self, *args, **kwargs):
-        self.phone_number = normalize_chile_phone_number(self.phone_number)
+        normalized_phone_number = normalize_chile_phone_number(self.phone_number)
+        self.phone_number = normalized_phone_number or None
         super().save(*args, **kwargs)
 
     def __str__(self) -> str:

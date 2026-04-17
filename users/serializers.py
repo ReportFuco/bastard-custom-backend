@@ -37,7 +37,7 @@ class UserRegisterSerializer(serializers.ModelSerializer):
 
     def validate_phone_number(self, value):
         try:
-            return normalize_chile_phone_number(value)
+            return normalize_chile_phone_number(value) or None
         except DjangoValidationError as exc:
             raise serializers.ValidationError(exc.message) from exc
 
@@ -59,7 +59,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
     def validate_phone_number(self, value):
         try:
-            return normalize_chile_phone_number(value)
+            return normalize_chile_phone_number(value) or None
         except DjangoValidationError as exc:
             raise serializers.ValidationError(exc.message) from exc
 

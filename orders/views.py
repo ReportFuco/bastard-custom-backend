@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from cart.models import Carrito, ItemCarrito
-from inventory.models import InventoryItem, MovimientoInventario
+from inventory.services import InsufficientStockError, build_stock_line, descontar_stock
 from .models import Order, OrderItem
 from .serializers import OrderSerializer, CheckoutSerializer
 
@@ -122,35 +122,6 @@ class CheckoutView(APIView):
         shipping_cost = self.calculate_shipping_cost(subtotal=subtotal)
         total = subtotal + shipping_cost
 
-        product_ids = [item.producto_id for item in cart_items]
-        inventory_map = {
-            inventory_item.producto_id: inventory_item
-            for inventory_item in InventoryItem.objects.select_for_update().filter(producto_id__in=product_ids)
-        }
-
-        stock_errors = []
-        for item in cart_items:
-            inventory_item = inventory_map.get(item.producto_id)
-            cantidad_disponible = inventory_item.cantidad_disponible if inventory_item else 0
-            if cantidad_disponible < item.cantidad:
-                stock_errors.append(
-                    {
-                        "product_id": item.producto_id,
-                        "nombre": item.producto.nombre,
-                        "requested": item.cantidad,
-                        "available": cantidad_disponible,
-                    }
-                )
-
-        if stock_errors:
-            return Response(
-                {
-                    "detail": "Stock insuficiente para completar la compra.",
-                    "items": stock_errors,
-                },
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
         order = Order.objects.create(
             user=request.user,
             idempotency_key=idempotency_key,
@@ -177,25 +148,29 @@ class CheckoutView(APIView):
 
         OrderItem.objects.bulk_create(order_items)
 
-        movimientos = []
-        for item in cart_items:
-            inventory_item = inventory_map[item.producto_id]
-            cantidad_anterior = inventory_item.cantidad_disponible
-            inventory_item.cantidad_disponible -= item.cantidad
-            inventory_item.save(update_fields=["cantidad_disponible", "actualizado_en"])
-            movimientos.append(
-                MovimientoInventario(
-                    item_inventario=inventory_item,
-                    tipo=MovimientoInventario.Tipo.SALIDA,
-                    cantidad=item.cantidad,
-                    cantidad_anterior=cantidad_anterior,
-                    cantidad_posterior=inventory_item.cantidad_disponible,
-                    motivo="Descuento por checkout",
-                    referencia=f"order:{order.id}",
-                    creado_por=request.user,
-                )
+        try:
+            descontar_stock(
+                lines=[
+                    build_stock_line(
+                        producto_id=item.producto_id,
+                        cantidad=item.cantidad,
+                        nombre=item.producto.nombre,
+                    )
+                    for item in cart_items
+                ],
+                actor=request.user,
+                motivo="Descuento por checkout",
+                referencia=f"order:{order.id}",
             )
-        MovimientoInventario.objects.bulk_create(movimientos)
+        except InsufficientStockError as exc:
+            transaction.set_rollback(True)
+            return Response(
+                {
+                    "detail": "Stock insuficiente para completar la compra.",
+                    "items": exc.items,
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         ItemCarrito.objects.filter(carrito=carrito).delete()
         carrito.status = Carrito.Status.CHECKED_OUT

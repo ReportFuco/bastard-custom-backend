@@ -1,10 +1,13 @@
 from django.contrib import admin
+from django.db import transaction
 from django.http import JsonResponse
 from django.urls import path, reverse
 
+from inventory.services import build_stock_line, reingresar_stock
+from users.models import Direccion
+
 from .forms import OrderAdminForm, OrderItemAdminForm
 from .models import Order, OrderItem
-from users.models import Direccion
 
 
 class OrderItemInline(admin.TabularInline):
@@ -38,7 +41,7 @@ class OrderItemInline(admin.TabularInline):
             return "-"
         return obj.quantity
 
-    @admin.display(description="Total línea")
+    @admin.display(description="Total linea")
     def total_linea(self, obj):
         if obj is None:
             return "-"
@@ -54,11 +57,11 @@ class OrderAdmin(admin.ModelAdmin):
     fieldsets = (
         ("Cliente", {"fields": ("user", "status", "idempotency_key")}),
         ("Montos", {"fields": ("subtotal", "shipping_cost", "total")}),
-        ("Dirección de envío", {"fields": ("direccion_envio",)}),
+        ("Direccion de envio", {"fields": ("direccion_envio",)}),
         ("Notas", {"fields": ("notes",)}),
-        ("Trazabilidad", {"fields": ("created_at", "updated_at")}),
+        ("Trazabilidad", {"fields": ("stock_reingresado", "created_at", "updated_at")}),
     )
-    readonly_fields = ("created_at", "updated_at")
+    readonly_fields = ("stock_reingresado", "created_at", "updated_at")
     inlines = [OrderItemInline]
 
     def get_queryset(self, request):
@@ -92,7 +95,6 @@ class OrderAdmin(admin.ModelAdmin):
         return obj.user_id == request.user.id
 
     def has_add_permission(self, request):
-        # Las ordenes deben generarse desde checkout; alta manual solo superusuario.
         return request.user.is_superuser and super().has_add_permission(request)
 
     def get_readonly_fields(self, request, obj=None):
@@ -100,6 +102,43 @@ class OrderAdmin(admin.ModelAdmin):
         if not request.user.is_superuser and "user" not in readonly_fields:
             readonly_fields.append("user")
         return tuple(readonly_fields)
+
+    def save_model(self, request, obj, form, change):
+        previous_status = None
+        previous_stock_reingresado = False
+        if change:
+            previous = Order.objects.only("status", "stock_reingresado").get(pk=obj.pk)
+            previous_status = previous.status
+            previous_stock_reingresado = previous.stock_reingresado
+
+        with transaction.atomic():
+            super().save_model(request, obj, form, change)
+
+            should_reingresar_stock = (
+                change
+                and previous_status != Order.Status.CANCELED
+                and obj.status == Order.Status.CANCELED
+                and not previous_stock_reingresado
+            )
+            if not should_reingresar_stock:
+                return
+
+            lines = [
+                build_stock_line(
+                    producto_id=item.product_id,
+                    cantidad=item.quantity,
+                    nombre=item.product_name,
+                )
+                for item in obj.items.select_related("product")
+            ]
+            reingresar_stock(
+                lines=lines,
+                actor=request.user,
+                motivo="Reingreso por cancelacion de orden",
+                referencia=f"order:{obj.id}:cancel",
+            )
+            obj.stock_reingresado = True
+            obj.save(update_fields=["stock_reingresado", "updated_at"])
 
     def get_urls(self):
         urls = super().get_urls()

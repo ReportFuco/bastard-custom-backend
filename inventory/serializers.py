@@ -31,6 +31,8 @@ class MovimientoInventarioSerializer(serializers.ModelSerializer):
     item_inventario_id = serializers.IntegerField(source="item_inventario.id", read_only=True)
     creado_por_id = serializers.IntegerField(source="creado_por.id", read_only=True)
     creado_por_username = serializers.CharField(source="creado_por.username", read_only=True)
+    disponible_antes = serializers.IntegerField(source="cantidad_anterior", read_only=True)
+    disponible_despues = serializers.IntegerField(source="cantidad_posterior", read_only=True)
 
     class Meta:
         model = MovimientoInventario
@@ -43,12 +45,26 @@ class MovimientoInventarioSerializer(serializers.ModelSerializer):
             "cantidad",
             "cantidad_anterior",
             "cantidad_posterior",
+            "disponible_antes",
+            "disponible_despues",
             "motivo",
             "referencia",
             "creado_por_id",
             "creado_por_username",
             "creado_en",
         ]
+
+
+class InventoryEntradaSerializer(serializers.Serializer):
+    cantidad = serializers.IntegerField(min_value=1)
+    motivo = serializers.CharField(required=False, allow_blank=True, default="")
+    referencia = serializers.CharField(required=False, allow_blank=True, default="")
+
+
+class InventoryAjusteSerializer(serializers.Serializer):
+    cantidad_disponible = serializers.IntegerField(min_value=0)
+    motivo = serializers.CharField(required=False, allow_blank=True, default="")
+    referencia = serializers.CharField(required=False, allow_blank=True, default="")
 
 
 class ProveedorSerializer(serializers.ModelSerializer):

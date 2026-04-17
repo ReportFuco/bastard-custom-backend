@@ -487,6 +487,8 @@ Estos endpoints requieren usuario admin.
 
 ### Items de inventario
 - `GET /api/inventory/items/`
+- `POST /api/inventory/items/{id}/entrada/`
+- `POST /api/inventory/items/{id}/ajuste/`
 
 Campos relevantes de respuesta:
 - `id`
@@ -498,6 +500,42 @@ Campos relevantes de respuesta:
 - `cantidad_total`
 - `en_stock`
 - `actualizado_en`
+
+Notas:
+- Cada producto crea automaticamente su `InventoryItem` con stock inicial `0`
+- `cantidad_reservada` queda como campo legado; en la implementacion actual no se usa para reservas operativas
+
+### Entrada manual de stock
+- `POST /api/inventory/items/{id}/entrada/`
+
+Body ejemplo:
+```json
+{
+  "cantidad": 5,
+  "motivo": "Recepcion de proveedor",
+  "referencia": "proveedor:12"
+}
+```
+
+Respuesta:
+- `item`: estado actualizado del item de inventario
+- `movimiento`: movimiento `entrada` generado por la operacion
+
+### Ajuste manual de stock
+- `POST /api/inventory/items/{id}/ajuste/`
+
+Body ejemplo:
+```json
+{
+  "cantidad_disponible": 12,
+  "motivo": "Conteo manual",
+  "referencia": "conteo:2026-04-17"
+}
+```
+
+Respuesta:
+- `item`: estado actualizado del item de inventario
+- `movimiento`: movimiento `ajuste` generado por la operacion
 
 ### Movimientos de inventario
 - `GET /api/inventory/movimientos/`
@@ -522,11 +560,17 @@ Campos relevantes de respuesta:
 - `cantidad`
 - `cantidad_anterior`
 - `cantidad_posterior`
+- `disponible_antes`
+- `disponible_despues`
 - `motivo`
 - `referencia`
 - `creado_por_id`
 - `creado_por_username`
 - `creado_en`
+
+Notas:
+- `cantidad_anterior` y `cantidad_posterior` representan el stock disponible antes y despues de la operacion
+- La API tambien expone aliases `disponible_antes` y `disponible_despues`
 
 ### Proveedores
 - `GET /api/inventory/proveedores/`

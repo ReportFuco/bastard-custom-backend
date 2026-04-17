@@ -34,3 +34,20 @@ class DireccionConstraintsTests(TestCase):
                 comuna=self.comuna,
                 es_predeterminada=True,
             )
+
+
+class UserPhoneNumberTests(TestCase):
+    def test_multiple_users_can_exist_without_phone_number(self):
+        user_a = User.objects.create_user(
+            username="user_a",
+            email="user_a@test.com",
+            password="12345678",
+        )
+        user_b = User.objects.create_user(
+            username="user_b",
+            email="user_b@test.com",
+            password="12345678",
+        )
+
+        self.assertIsNone(user_a.phone_number)
+        self.assertIsNone(user_b.phone_number)

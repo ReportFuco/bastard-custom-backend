@@ -3,7 +3,6 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from inventory.models import InventoryItem
 from products.models import Categorias, Producto
 from users.models import Comuna, Direccion, Region
 
@@ -39,7 +38,9 @@ class CartHistoryTests(APITestCase):
             precio="10000.00",
             activo=True,
         )
-        InventoryItem.objects.create(producto=self.producto, cantidad_disponible=10)
+        inventory_item = self.producto.item_inventario
+        inventory_item.cantidad_disponible = 10
+        inventory_item.save(update_fields=["cantidad_disponible", "actualizado_en"])
 
     def test_checkout_closes_active_cart_and_creates_new_one(self):
         carrito = Carrito.objects.create(user=self.user, status=Carrito.Status.ACTIVE)

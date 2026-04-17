@@ -1,14 +1,18 @@
+from django.contrib.admin.sites import AdminSite
 from django.contrib.auth import get_user_model
+from django.test import RequestFactory
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
 from cart.models import Carrito, ItemCarrito
-from inventory.models import InventoryItem, MovimientoInventario
+from inventory.models import MovimientoInventario
 from products.models import Categorias, Producto
 from users.models import Comuna, Direccion, Region
 
-from .models import Order
+from .admin import OrderAdmin
+from .forms import OrderAdminForm
+from .models import Order, OrderItem
 
 User = get_user_model()
 
@@ -41,7 +45,9 @@ class CheckoutFlowTests(APITestCase):
             precio="19990.00",
             activo=True,
         )
-        InventoryItem.objects.create(producto=self.producto, cantidad_disponible=10)
+        self.inventory_item = self.producto.item_inventario
+        self.inventory_item.cantidad_disponible = 10
+        self.inventory_item.save(update_fields=["cantidad_disponible", "actualizado_en"])
 
         carrito = Carrito.objects.create(user=self.user)
         ItemCarrito.objects.create(carrito=carrito, producto=self.producto, cantidad=2)
@@ -90,16 +96,18 @@ class CheckoutFlowTests(APITestCase):
         self.assertEqual(first.data["id"], second.data["id"])
         self.assertEqual(Order.objects.count(), 1)
 
-    def test_checkout_fails_on_insufficient_stock(self):
-        inventory_item = InventoryItem.objects.get(producto=self.producto)
-        inventory_item.cantidad_disponible = 1
-        inventory_item.save(update_fields=["cantidad_disponible"])
+    def test_checkout_fails_on_insufficient_stock_without_side_effects(self):
+        self.inventory_item.cantidad_disponible = 1
+        self.inventory_item.save(update_fields=["cantidad_disponible", "actualizado_en"])
 
         url = reverse("orders-checkout")
         response = self.client.post(url, {"direccion_id": self.direccion.id}, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data["detail"], "Stock insuficiente para completar la compra.")
+        self.assertEqual(Order.objects.count(), 0)
+        self.assertEqual(OrderItem.objects.count(), 0)
+        self.assertFalse(MovimientoInventario.objects.exists())
 
     def test_checkout_fails_if_product_is_inactive(self):
         self.producto.activo = False
@@ -273,3 +281,98 @@ class OrderAdminSecurityTests(APITestCase):
         response_ajenas = self.client.get(url, {"user_id": otro.id})
         self.assertEqual(response_ajenas.status_code, status.HTTP_200_OK)
         self.assertEqual(response_ajenas.json()["direcciones"], [])
+
+
+class OrderAdminInventoryLifecycleTests(APITestCase):
+    def setUp(self):
+        self.admin_user = User.objects.create_superuser(
+            username="superadmin",
+            email="superadmin@test.com",
+            password="12345678",
+        )
+        region = Region.objects.create(nombre="Metropolitana")
+        comuna = Comuna.objects.create(nombre="Santiago", region=region)
+        self.customer = User.objects.create_user(
+            username="customer",
+            email="customer@test.com",
+            password="12345678",
+        )
+        direccion = Direccion.objects.create(
+            usuario=self.customer,
+            etiqueta="Casa",
+            direccion="Uno",
+            numero="123",
+            comuna=comuna,
+            es_predeterminada=True,
+        )
+        categoria = Categorias.objects.create(nombre="Calzado", slug="calzado")
+        producto = Producto.objects.create(
+            nombre="Zapatilla",
+            categoria=categoria,
+            slug="zapatilla",
+            precio="30000.00",
+            activo=True,
+        )
+        self.inventory_item = producto.item_inventario
+        self.inventory_item.cantidad_disponible = 5
+        self.inventory_item.save(update_fields=["cantidad_disponible", "actualizado_en"])
+
+        self.order = Order.objects.create(
+            user=self.customer,
+            status=Order.Status.PAID,
+            subtotal="30000.00",
+            shipping_cost="0.00",
+            total="30000.00",
+            direccion_envio=direccion,
+        )
+        OrderItem.objects.create(
+            order=self.order,
+            product=producto,
+            product_name=producto.nombre,
+            product_slug=producto.slug,
+            unit_price="30000.00",
+            quantity=2,
+            line_total="60000.00",
+        )
+
+    def test_canceling_order_from_admin_reingresa_stock_once(self):
+        request = RequestFactory().post("/admin/orders/order/")
+        request.user = self.admin_user
+        admin_instance = OrderAdmin(Order, AdminSite())
+
+        self.order.status = Order.Status.CANCELED
+        admin_instance.save_model(request, self.order, form=None, change=True)
+
+        self.order.refresh_from_db()
+        self.inventory_item.refresh_from_db()
+        self.assertEqual(self.inventory_item.cantidad_disponible, 7)
+        self.assertTrue(self.order.stock_reingresado)
+
+        movimiento = MovimientoInventario.objects.get(
+            referencia=f"order:{self.order.id}:cancel",
+            tipo=MovimientoInventario.Tipo.ENTRADA,
+        )
+        self.assertEqual(movimiento.cantidad, 2)
+
+    def test_canceled_order_cannot_be_reopened_from_admin_form(self):
+        self.order.status = Order.Status.CANCELED
+        self.order.stock_reingresado = True
+        self.order.save(update_fields=["status", "stock_reingresado", "updated_at"])
+
+        form = OrderAdminForm(
+            data={
+                "user": self.order.user_id,
+                "idempotency_key": "",
+                "status": Order.Status.PAID,
+                "subtotal": self.order.subtotal,
+                "shipping_cost": self.order.shipping_cost,
+                "total": self.order.total,
+                "notes": self.order.notes,
+                "direccion_envio": self.order.direccion_envio_id,
+                "stock_reingresado": True,
+            },
+            instance=self.order,
+        )
+
+        self.assertFalse(form.is_valid())
+        self.assertIn("status", form.errors)

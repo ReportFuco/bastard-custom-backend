@@ -8,7 +8,13 @@ class InventoryItemAdmin(admin.ModelAdmin):
     list_display = ("producto", "cantidad_disponible", "cantidad_reservada", "cantidad_total", "en_stock", "actualizado_en")
     search_fields = ("producto__nombre", "producto__slug")
     list_filter = ("actualizado_en",)
-    readonly_fields = ("actualizado_en",)
+    readonly_fields = ("producto", "cantidad_disponible", "cantidad_reservada", "actualizado_en")
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
 
 
 @admin.register(MovimientoInventario)
@@ -25,7 +31,28 @@ class MovimientoInventarioAdmin(admin.ModelAdmin):
     )
     search_fields = ("item_inventario__producto__nombre", "item_inventario__producto__slug", "referencia")
     list_filter = ("tipo", "creado_en")
-    readonly_fields = ("creado_en",)
+    readonly_fields = (
+        "item_inventario",
+        "tipo",
+        "cantidad",
+        "cantidad_anterior",
+        "cantidad_posterior",
+        "motivo",
+        "referencia",
+        "creado_por",
+        "creado_en",
+    )
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        if obj is None:
+            return super().has_change_permission(request, obj)
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
 
 
 @admin.register(Proveedor)

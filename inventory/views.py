@@ -1,12 +1,18 @@
-from rest_framework import generics, permissions
+from django.db import transaction
+from rest_framework import generics, permissions, status
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from .models import InventoryItem, MovimientoInventario, ProductoProveedor, Proveedor
 from .serializers import (
+    InventoryAjusteSerializer,
+    InventoryEntradaSerializer,
     InventoryItemSerializer,
     MovimientoInventarioSerializer,
     ProductoProveedorSerializer,
     ProveedorSerializer,
 )
+from .services import InvalidStockAdjustmentError, ajustar_stock, registrar_entrada_stock
 
 
 class InventoryItemListView(generics.ListAPIView):
@@ -15,6 +21,70 @@ class InventoryItemListView(generics.ListAPIView):
 
     def get_queryset(self):
         return InventoryItem.objects.select_related("producto").order_by("producto__nombre")
+
+
+class InventoryEntradaView(APIView):
+    permission_classes = [permissions.IsAdminUser]
+
+    @transaction.atomic
+    def post(self, request, pk):
+        inventory_item = InventoryItem.objects.select_related("producto").filter(pk=pk).first()
+        if not inventory_item:
+            return Response({"detail": "Item de inventario no encontrado."}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = InventoryEntradaSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        try:
+            movimiento = registrar_entrada_stock(
+                inventory_item=inventory_item,
+                cantidad=serializer.validated_data["cantidad"],
+                actor=request.user,
+                motivo=serializer.validated_data.get("motivo") or "Entrada manual de stock",
+                referencia=serializer.validated_data.get("referencia", ""),
+            )
+        except InvalidStockAdjustmentError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+        inventory_item.refresh_from_db()
+        return Response(
+            {
+                "item": InventoryItemSerializer(inventory_item).data,
+                "movimiento": MovimientoInventarioSerializer(movimiento).data,
+            }
+        )
+
+
+class InventoryAjusteView(APIView):
+    permission_classes = [permissions.IsAdminUser]
+
+    @transaction.atomic
+    def post(self, request, pk):
+        inventory_item = InventoryItem.objects.select_related("producto").filter(pk=pk).first()
+        if not inventory_item:
+            return Response({"detail": "Item de inventario no encontrado."}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = InventoryAjusteSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        try:
+            movimiento = ajustar_stock(
+                inventory_item=inventory_item,
+                cantidad_disponible=serializer.validated_data["cantidad_disponible"],
+                actor=request.user,
+                motivo=serializer.validated_data.get("motivo") or "Ajuste manual de stock",
+                referencia=serializer.validated_data.get("referencia", ""),
+            )
+        except InvalidStockAdjustmentError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+        inventory_item.refresh_from_db()
+        return Response(
+            {
+                "item": InventoryItemSerializer(inventory_item).data,
+                "movimiento": MovimientoInventarioSerializer(movimiento).data,
+            }
+        )
 
 
 class MovimientoInventarioListView(generics.ListAPIView):
